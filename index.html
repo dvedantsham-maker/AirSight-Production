@@ -1,0 +1,2281 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AirSight | AI-Powered Air Pollution & Weather Coupled Forecasting System (Delhi-NCR)</title>
+  <meta name="description" content="Smart India Hackathon 2026 (SIH26082) — AI-powered environmental intelligence platform coupling atmospheric weather and particulate emissions for 24–72h predictive air quality forecasting across Delhi-NCR.">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#060b14',
+              surface: '#0d1629',
+              border: 'rgba(255, 255, 255, 0.08)',
+              cyan: '#06b6d4',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              rose: '#f43f5e',
+              purple: '#9333ea'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Leaflet.js CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-[#060b14] text-slate-100 antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+
+  <!-- =========================================================================
+       1. STICKY NAVIGATION BAR
+       ========================================================================= -->
+  <header class="fixed top-0 left-0 right-0 z-50 glass-nav border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <!-- Logo & SIH Tag -->
+      <a href="#hero" class="flex items-center gap-3 group">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-cyan-500 via-teal-500 to-emerald-400 p-0.5 shadow-lg shadow-cyan-500/20 group-hover:shadow-cyan-500/40 transition-shadow">
+          <div class="w-full h-full bg-[#060b14] rounded-[10px] flex items-center justify-center">
+            <i data-lucide="wind" class="w-6 h-6 text-cyan-400 group-hover:rotate-12 transition-transform"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-2xl font-black tracking-tight font-heading text-white">Air<span class="text-cyan-400">Sight</span></span>
+            <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">SIH 2026</span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-medium tracking-wide">AI Weather-Coupled Forecasting</p>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation Links -->
+      <nav class="hidden xl:flex items-center gap-6 text-xs font-semibold tracking-wide">
+        <a href="#problem" class="nav-link text-slate-300 hover:text-cyan-400 transition-colors">The Problem</a>
+        <a href="#weather-matters" class="nav-link text-slate-300 hover:text-cyan-400 transition-colors">Why Weather</a>
+        <a href="#solution" class="nav-link text-slate-300 hover:text-cyan-400 transition-colors">Solution Flow</a>
+        <a href="#data-sources" class="nav-link text-slate-300 hover:text-cyan-400 transition-colors">Data Sources</a>
+        <a href="#sensors" class="nav-link text-slate-300 hover:text-cyan-400 transition-colors">Sensors & IoT</a>
+        <a href="#ai-engine" class="nav-link text-slate-300 hover:text-cyan-400 transition-colors">AI/ML Engine</a>
+        <a href="#forecast-studio" class="nav-link text-slate-300 hover:text-cyan-400 transition-colors">72h Forecast</a>
+        <a href="#delhi-map" class="nav-link text-slate-300 hover:text-cyan-400 transition-colors">Live Heatmap</a>
+        <a href="#early-warning" class="nav-link text-slate-300 hover:text-cyan-400 transition-colors">Alerts</a>
+        <a href="#architecture" class="nav-link text-slate-300 hover:text-cyan-400 transition-colors">Architecture</a>
+      </nav>
+
+      <!-- Action Button & Mobile Toggle -->
+      <div class="flex items-center gap-3">
+        <a href="#dashboard" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all hover:scale-105">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          <span>Live Dashboard</span>
+        </a>
+        <button id="mobile-menu-btn" class="xl:hidden p-2 rounded-lg bg-slate-800 text-slate-200 hover:text-white border border-white/10" aria-label="Toggle Navigation">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Slide Drawer -->
+    <div id="mobile-menu-drawer" class="hidden xl:hidden bg-[#060b14]/95 backdrop-blur-xl border-b border-white/10 px-6 py-6 space-y-4">
+      <div class="flex justify-between items-center pb-3 border-b border-white/10">
+        <span class="text-xs font-mono uppercase tracking-wider text-slate-400">Navigation Menu</span>
+        <button id="mobile-menu-close" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="grid grid-cols-2 gap-3 text-sm font-medium">
+        <a href="#problem" class="mobile-nav-link text-slate-300 hover:text-cyan-400 py-1">The Problem</a>
+        <a href="#weather-matters" class="mobile-nav-link text-slate-300 hover:text-cyan-400 py-1">Why Weather</a>
+        <a href="#solution" class="mobile-nav-link text-slate-300 hover:text-cyan-400 py-1">Solution Pipeline</a>
+        <a href="#data-sources" class="mobile-nav-link text-slate-300 hover:text-cyan-400 py-1">Data Sources</a>
+        <a href="#sensors" class="mobile-nav-link text-slate-300 hover:text-cyan-400 py-1">Sensors & IoT</a>
+        <a href="#pollutants" class="mobile-nav-link text-slate-300 hover:text-cyan-400 py-1">Pollutants</a>
+        <a href="#ai-engine" class="mobile-nav-link text-slate-300 hover:text-cyan-400 py-1">AI/ML Engine</a>
+        <a href="#forecast-studio" class="mobile-nav-link text-slate-300 hover:text-cyan-400 py-1">72h Forecast</a>
+        <a href="#delhi-map" class="mobile-nav-link text-slate-300 hover:text-cyan-400 py-1">Delhi-NCR Map</a>
+        <a href="#early-warning" class="mobile-nav-link text-slate-300 hover:text-cyan-400 py-1">Alerts System</a>
+        <a href="#architecture" class="mobile-nav-link text-slate-300 hover:text-cyan-400 py-1">System Architecture</a>
+        <a href="#impact" class="mobile-nav-link text-slate-300 hover:text-cyan-400 py-1">Impact & Scope</a>
+      </div>
+      <div class="pt-3 border-t border-white/10">
+        <a href="#dashboard" class="mobile-nav-link w-full py-2.5 rounded-lg bg-cyan-500 text-slate-950 font-bold text-center block text-sm">
+          Open Environmental Dashboard
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="pt-20">
+
+    <!-- =========================================================================
+         2. HERO SECTION & SIH PROJECT BADGE (Sections 4 & 5)
+         ========================================================================= -->
+    <section id="hero" class="relative min-h-[92vh] flex items-center justify-center overflow-hidden py-14 px-4 sm:px-6 lg:px-8">
+      <!-- Ambient Glows -->
+      <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute bottom-10 right-10 w-[450px] h-[450px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="max-w-7xl mx-auto w-full relative z-10">
+        
+        <!-- SIH 2026 Project Identification Panel (Requirement 2 & 5) -->
+        <div class="mb-6 flex flex-wrap items-center justify-center gap-3">
+          <div class="glass-panel px-4 py-2 rounded-full flex flex-wrap items-center justify-center gap-3 text-xs font-mono border border-cyan-500/40 glow-cyan">
+            <span class="flex h-2.5 w-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+            <span class="text-cyan-300 font-bold tracking-wide">Smart India Hackathon 2026</span>
+            <span class="text-slate-500 hidden sm:inline">|</span>
+            <span class="text-slate-300">Problem Statement ID: <strong class="text-white">SIH26082</strong></span>
+            <span class="text-slate-500 hidden sm:inline">|</span>
+            <span class="text-emerald-400 font-semibold">Theme: Clean & Green Technology</span>
+            <span class="text-slate-500 hidden sm:inline">|</span>
+            <span class="text-slate-300">Category: <strong class="text-white">Software</strong></span>
+            <span class="text-slate-500 hidden sm:inline">|</span>
+            <span class="text-slate-300">Team: <strong class="text-cyan-400">TechNova</strong></span>
+          </div>
+        </div>
+
+        <!-- Evaluator Quick Navigation Tour Bar -->
+        <div class="mb-8 flex items-center justify-center">
+          <div class="glass-panel px-4 py-2 rounded-2xl border border-white/10 flex flex-wrap items-center justify-center gap-2 text-[11px] font-mono text-slate-300">
+            <span class="text-cyan-400 font-bold flex items-center gap-1">
+              <i data-lucide="compass" class="w-3.5 h-3.5"></i>
+              <span>EVALUATOR QUICK TOUR:</span>
+            </span>
+            <a href="#problem" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 hover:text-cyan-300 transition-colors">1. The Problem</a>
+            <a href="#weather-matters" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 hover:text-cyan-300 transition-colors">2. Weather Physics</a>
+            <a href="#solution" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 hover:text-cyan-300 transition-colors">3. 7-Stage Pipeline</a>
+            <a href="#sensors" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 hover:text-cyan-300 transition-colors">4. IoT Sensor Bus</a>
+            <a href="#forecast-studio" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 hover:text-cyan-300 transition-colors">5. 72h Forecast</a>
+            <a href="#delhi-map" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 hover:text-cyan-300 transition-colors">6. Spatial Heatmap</a>
+            <a href="#early-warning" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 hover:text-cyan-300 transition-colors">7. Incident Simulator</a>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <!-- Hero Copy -->
+          <div class="lg:col-span-7 text-center lg:text-left space-y-6">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-cyan-950/70 border border-cyan-700/60 text-cyan-300 text-xs font-mono font-medium">
+              <i data-lucide="cpu" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Air pollution forecasting powered by weather intelligence and AI/ML</span>
+            </div>
+            
+            <h1 class="text-4xl sm:text-6xl xl:text-7xl font-black tracking-tight font-heading leading-tight">
+              Predicting Air Quality. <br/>
+              <span class="text-gradient-cyan">Protecting Lives.</span>
+            </h1>
+
+            <p class="text-lg sm:text-xl text-slate-300 max-w-2xl font-light leading-relaxed">
+              An intelligent forecasting platform combining ground air-quality telemetry, satellite observations, and numerical weather intelligence to anticipate hazardous pollution conditions across 
+              <span class="text-cyan-300 font-semibold underline decoration-cyan-500/40 underline-offset-4">Delhi-NCR</span> 
+              up to <strong>72 hours in advance</strong>.
+            </p>
+
+            <div class="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
+              <a href="#dashboard" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 font-extrabold text-sm shadow-xl shadow-cyan-500/25 flex items-center gap-2 transition-all hover:scale-105">
+                <span>Explore AirSight Dashboard</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </a>
+              <a href="#solution" class="px-6 py-3.5 rounded-xl glass-panel glass-panel-hover text-white font-semibold text-sm flex items-center gap-2 border border-white/15">
+                <i data-lucide="git-branch" class="w-4 h-4 text-cyan-400"></i>
+                <span>How It Works</span>
+              </a>
+              <a href="#forecast-studio" class="px-6 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-200 font-semibold text-sm border border-white/10 flex items-center gap-2">
+                <i data-lucide="trending-up" class="w-4 h-4 text-rose-400"></i>
+                <span>72h Predictive Studio</span>
+              </a>
+            </div>
+
+            <!-- Key System Pillars Bar -->
+            <div class="grid grid-cols-3 gap-4 pt-6 border-t border-white/10">
+              <div class="space-y-1">
+                <div class="text-2xl sm:text-3xl font-black font-mono text-cyan-400">24–72h</div>
+                <div class="text-xs text-slate-400">Predictive Lead Horizon</div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-2xl sm:text-3xl font-black font-mono text-emerald-400">7 Hotspots</div>
+                <div class="text-xs text-slate-400">Delhi-NCR Monitoring Nodes</div>
+              </div>
+              <div class="space-y-1">
+                <div class="text-2xl sm:text-3xl font-black font-mono text-purple-400">Coupled AI</div>
+                <div class="text-xs text-slate-400">Meteorology + Particulates</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hero Visual: Environmental-Tech Atmosphere & AI Neural Visual -->
+          <div class="lg:col-span-5 relative">
+            <div class="relative glass-panel rounded-3xl p-6 border border-cyan-500/30 glow-cyan overflow-hidden bg-gradient-to-b from-slate-900/90 to-[#060b14]/90">
+              <!-- Visual Header Badge -->
+              <div class="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-rose-500 animate-pulse"></span>
+                  <span class="text-xs font-mono font-bold text-slate-200">DELHI-NCR ATMOSPHERIC RADAR</span>
+                </div>
+                <span class="demo-badge">DEMO PROTOTYPE</span>
+              </div>
+
+              <!-- Custom SVG Atmospheric Visual with Delhi Skyline, Inversion Dome, and AI Vectors -->
+              <div class="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-slate-950/80 border border-white/5 flex items-center justify-center p-2">
+                <svg viewBox="0 0 500 380" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#091b34" />
+                      <stop offset="40%" stop-color="#142646" />
+                      <stop offset="75%" stop-color="#3d212a" />
+                      <stop offset="100%" stop-color="#2a141b" />
+                    </linearGradient>
+                    <linearGradient id="smogGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="rgba(244,63,94,0.0)" />
+                      <stop offset="60%" stop-color="rgba(245,158,11,0.25)" />
+                      <stop offset="100%" stop-color="rgba(147,51,234,0.5)" />
+                    </linearGradient>
+                  </defs>
+
+                  <!-- Sky & Atmospheric Smog Gradient -->
+                  <rect width="500" height="380" fill="url(#skyGrad)" rx="16" />
+                  <rect y="160" width="500" height="220" fill="url(#smogGrad)" />
+
+                  <!-- Grid Coordinate Mesh -->
+                  <g stroke="rgba(56,189,248,0.08)" stroke-width="1">
+                    <line x1="0" y1="70" x2="500" y2="70" />
+                    <line x1="0" y1="140" x2="500" y2="140" />
+                    <line x1="0" y1="210" x2="500" y2="210" />
+                    <line x1="0" y1="280" x2="500" y2="280" />
+                    <line x1="100" y1="0" x2="100" y2="380" />
+                    <line x1="200" y1="0" x2="200" y2="380" />
+                    <line x1="300" y1="0" x2="300" y2="380" />
+                    <line x1="400" y1="0" x2="400" y2="380" />
+                  </g>
+
+                  <!-- Thermal Inversion Boundary Lid (Dashed glowing line) -->
+                  <path d="M 0 170 Q 250 145 500 170" fill="none" stroke="#f43f5e" stroke-width="2.5" stroke-dasharray="6,6" />
+                  <text x="25" y="160" fill="#fda4af" font-size="11" font-family="'JetBrains Mono', monospace" font-weight="bold">
+                    ▲ INVERSION CEILING (~320m TRAP)
+                  </text>
+
+                  <!-- Wind Flow Streamlines (NW to SE across Delhi) -->
+                  <path d="M 30 90 Q 220 70 470 120" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="14,8" opacity="0.7" />
+                  <path d="M 20 120 Q 200 110 480 160" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="10,6" opacity="0.6" />
+
+                  <!-- Stylized Delhi Skyline (India Gate silhouette, Lotus Temple, high rises) -->
+                  <g fill="#0b1220">
+                    <!-- Background skyline blocks -->
+                    <rect x="30" y="270" width="40" height="80" />
+                    <rect x="80" y="250" width="30" height="100" />
+                    <rect x="120" y="280" width="50" height="70" />
+                    
+                    <!-- India Gate Motif -->
+                    <path d="M 200 350 L 200 230 L 220 230 L 220 280 L 260 280 L 260 230 L 280 230 L 280 350 Z" />
+                    <path d="M 220 280 Q 240 260 260 280 Z" fill="#060b14" />
+
+                    <!-- Lotus Temple Curve Motif -->
+                    <path d="M 320 350 C 330 280 370 280 380 350 Z" />
+                    <path d="M 335 350 C 342 300 358 300 365 350 Z" fill="#060b14" />
+
+                    <!-- Eastern Noida/Ghaziabad Chimneys & Towers -->
+                    <rect x="410" y="240" width="25" height="110" />
+                    <rect x="445" y="260" width="35" height="90" />
+                    <!-- Smoke Plume -->
+                    <circle cx="422" cy="225" r="14" fill="rgba(244,63,94,0.3)" />
+                    <circle cx="430" cy="205" r="20" fill="rgba(244,63,94,0.2)" />
+                  </g>
+
+                  <!-- Ground Line -->
+                  <rect y="350" width="500" height="30" fill="#060b14" />
+
+                  <!-- IoT Sensor Node Pulses -->
+                  <circle cx="95" cy="330" r="6" fill="#06b6d4" />
+                  <circle cx="95" cy="330" r="14" fill="none" stroke="#06b6d4" opacity="0.6" />
+                  
+                  <circle cx="240" cy="330" r="6" fill="#10b981" />
+                  <circle cx="240" cy="330" r="14" fill="none" stroke="#10b981" opacity="0.6" />
+
+                  <circle cx="420" cy="330" r="6" fill="#f43f5e" />
+                  <circle cx="420" cy="330" r="14" fill="none" stroke="#f43f5e" opacity="0.6" />
+
+                  <!-- Neural Telemetry Lines linking to Cloud/AI Core -->
+                  <path d="M 95 330 Q 150 180 250 80" fill="none" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="4,4" />
+                  <path d="M 240 330 L 250 80" fill="none" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4,4" />
+                  <path d="M 420 330 Q 360 180 250 80" fill="none" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="4,4" />
+
+                  <!-- Central AI Engine Node in Sky -->
+                  <circle cx="250" cy="80" r="28" fill="#0d1f38" stroke="#38bdf8" stroke-width="2.5" />
+                  <circle cx="250" cy="80" r="38" fill="none" stroke="#38bdf8" stroke-width="1" stroke-dasharray="3,3" />
+                  <text x="250" y="85" text-anchor="middle" fill="#38bdf8" font-size="11" font-family="'JetBrains Mono', monospace" font-weight="bold">
+                    AI/ML
+                  </text>
+                </svg>
+              </div>
+
+              <!-- Quick Status Footer -->
+              <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="satellite" class="w-4 h-4 text-cyan-400"></i>
+                  <span>INSAT-3D + CAAQMS + IMD Feeds</span>
+                </div>
+                <span class="font-mono text-cyan-300">Coupled Ingestion Active</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         2.5 DATA + AI STORY FLOW RIBBON (Requirement 3)
+         ========================================================================= -->
+    <section class="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div class="glass-panel p-6 rounded-3xl border border-cyan-500/30 relative overflow-hidden bg-gradient-to-r from-slate-950 via-[#0a182d] to-slate-950">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 mb-4 border-b border-white/10">
+          <div>
+            <span class="text-[11px] font-mono uppercase tracking-wider text-cyan-400 font-bold">END-TO-END ARCHITECTURAL JOURNEY</span>
+            <h3 class="text-base font-bold text-white mt-0.5">The Complete AirSight Data & Forecasting Pipeline</h3>
+          </div>
+          <span class="sim-indicator">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+            Sequential Coupling Flow Active
+          </span>
+        </div>
+
+        <!-- 7 Pipeline Step Chips -->
+        <div class="relative">
+          <!-- Animated connecting background line -->
+          <div class="hidden lg:block absolute top-1/2 left-0 right-0 h-1 flow-ribbon-line -translate-y-1/2 z-0 rounded-full"></div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 relative z-10 text-xs font-mono">
+            
+            <div class="p-3 rounded-xl bg-slate-900/90 border border-cyan-500/40 text-center space-y-1 shadow-lg">
+              <span class="text-cyan-400 font-bold block text-[10px]">STEP 01</span>
+              <strong class="text-white block text-[11px]">Real-Time Data</strong>
+              <span class="text-[9px] text-slate-400 block">CAAQMS + Edge IoT</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-900/90 border border-teal-500/40 text-center space-y-1 shadow-lg">
+              <span class="text-teal-400 font-bold block text-[10px]">STEP 02</span>
+              <strong class="text-white block text-[11px]">Data Integration</strong>
+              <span class="text-[9px] text-slate-400 block">Satellite + Traffic</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-900/90 border border-emerald-500/40 text-center space-y-1 shadow-lg">
+              <span class="text-emerald-400 font-bold block text-[10px]">STEP 03</span>
+              <strong class="text-white block text-[11px]">Weather Intel</strong>
+              <span class="text-[9px] text-slate-400 block">Wind + Inversion Lid</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-900/90 border border-indigo-500/40 text-center space-y-1 shadow-lg">
+              <span class="text-indigo-400 font-bold block text-[10px]">STEP 04</span>
+              <strong class="text-white block text-[11px]">AI/ML Neural Core</strong>
+              <span class="text-[9px] text-slate-400 block">ST-GNN + Bi-LSTM</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-900/90 border border-purple-500/40 text-center space-y-1 shadow-lg">
+              <span class="text-purple-400 font-bold block text-[10px]">STEP 05</span>
+              <strong class="text-white block text-[11px]">24–72h Forecast</strong>
+              <span class="text-[9px] text-slate-400 block">Diurnal Uncertainty</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-900/90 border border-rose-500/40 text-center space-y-1 shadow-lg">
+              <span class="text-rose-400 font-bold block text-[10px]">STEP 06</span>
+              <strong class="text-white block text-[11px]">Early Warning</strong>
+              <span class="text-[9px] text-slate-400 block">GRAP-IV Protocols</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-900/90 border border-amber-500/40 text-center space-y-1 shadow-lg bg-gradient-to-b from-amber-950/20 to-slate-900">
+              <span class="text-amber-400 font-bold block text-[10px]">STEP 07</span>
+              <strong class="text-amber-300 block text-[11px]">Targeted Action</strong>
+              <span class="text-[9px] text-slate-300 block">Mist Guns & Alerts</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         3. LIVE INTERACTIVE DASHBOARD (Sections 22, 19, Requirement 4)
+         ========================================================================= -->
+    <section id="dashboard" class="py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div id="main-dashboard-card" class="glass-panel rounded-3xl p-6 sm:p-8 border border-white/10 relative transition-all shadow-2xl">
+        <!-- Dashboard Header & Location Switcher -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/10">
+          <div>
+            <div class="flex flex-wrap items-center gap-3">
+              <h2 class="text-2xl sm:text-3xl font-black font-heading tracking-tight text-white">Live Prototype Dashboard</h2>
+              <span class="demo-badge">PROTOTYPE SIMULATION DATA</span>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-300 mt-1">
+              Synchronized multi-pollutant & meteorological telemetry representing representative Delhi-NCR winter inversion conditions.
+            </p>
+          </div>
+
+          <!-- Location Selector Dropdown -->
+          <div class="flex items-center gap-3">
+            <label for="location-selector" class="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <i data-lucide="map-pin" class="w-4 h-4 text-cyan-400"></i>
+              <span>Active Hotspot:</span>
+            </label>
+            <select id="location-selector" class="bg-slate-900/95 text-white font-semibold text-sm rounded-xl px-4 py-2.5 border border-cyan-500/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 cursor-pointer shadow-lg">
+              <!-- Options populated dynamically by js/app.js -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Location Profile Bar with Clear Distinction -->
+        <div class="py-4 border-b border-white/5 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-300">
+          <div class="flex items-center gap-2">
+            <span class="text-slate-500 font-mono">SELECTED STATION:</span>
+            <span id="dash-active-location-name" class="font-bold text-white text-sm">Central Delhi (Mandir Marg / CP)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-slate-500 font-mono">PRIMARY LOCAL EMISSION:</span>
+            <span id="dash-active-source" class="font-medium text-amber-300">Vehicular Traffic (Connaught Place ring)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-slate-500 font-mono">TELEMETRY MODE:</span>
+            <span class="text-cyan-400 font-mono font-bold flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span> Simulated Benchmark Feed
+            </span>
+          </div>
+        </div>
+
+        <!-- Main Dashboard Metrics Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+          
+          <!-- Block 1: Large AQI Gauge Card -->
+          <div class="lg:col-span-4 glass-panel rounded-2xl p-6 border border-white/10 flex flex-col justify-between bg-gradient-to-b from-slate-900/80 to-[#0b1424] shadow-xl">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-xs font-mono uppercase tracking-wider text-slate-400">SIMULATED AIR QUALITY INDEX</span>
+                <h3 class="text-slate-200 font-bold text-lg mt-0.5">Composite NAQI</h3>
+              </div>
+              <span id="dash-aqi-badge" class="px-3 py-1 rounded-full text-xs font-mono font-bold border border-orange-500/50 bg-orange-500/10 text-orange-400">
+                Poor (AQI 288)
+              </span>
+            </div>
+
+            <!-- Prominent Number Display -->
+            <div class="py-6 text-center">
+              <div id="dash-aqi-value" class="text-6xl sm:text-7xl font-black font-mono tracking-tight text-orange-400">
+                288
+              </div>
+              <div id="dash-aqi-category" class="text-xl font-bold mt-2 text-orange-400 font-heading">
+                Poor Category
+              </div>
+              <p class="text-xs text-slate-400 mt-2 max-w-xs mx-auto">
+                Prolonged exposure triggers breathing discomfort; vulnerable groups should restrict outdoor activity.
+              </p>
+            </div>
+
+            <!-- Risk Evaluation Bar -->
+            <div class="pt-4 border-t border-white/10">
+              <div class="flex justify-between text-xs mb-1.5">
+                <span class="text-slate-400 font-medium">24-Hour Risk Outlook</span>
+                <span id="dash-risk-level" class="text-rose-400 font-semibold font-mono">High Risk (24h Deterioration)</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden flex">
+                <div class="bg-emerald-500 h-full w-[20%]"></div>
+                <div class="bg-yellow-500 h-full w-[20%]"></div>
+                <div class="bg-orange-500 h-full w-[20%]"></div>
+                <div class="bg-rose-500 h-full w-[20%]"></div>
+                <div class="bg-purple-600 h-full w-[20%]"></div>
+              </div>
+              <div class="flex justify-between text-[10px] font-mono text-slate-500 mt-1">
+                <span>Good</span>
+                <span>Moderate</span>
+                <span>Very Poor</span>
+                <span>Severe</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Secondary Metric Panels: Particulates & Weather Coupling -->
+          <div class="lg:col-span-8 space-y-6">
+            <!-- Block 2: Particulate & Gas Grid with Compliance Bars -->
+            <div>
+              <div class="flex justify-between items-center mb-3">
+                <h4 class="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <i data-lucide="atom" class="w-4 h-4 text-cyan-400"></i>
+                  <span>Regulated Pollutant Concentrations</span>
+                </h4>
+                <span class="text-[10px] font-mono text-slate-400">Limits: CPCB NAQI Standards</span>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <!-- PM2.5 -->
+                <div class="glass-panel p-3.5 rounded-xl border border-white/5 space-y-1.5">
+                  <div class="flex justify-between text-xs text-slate-400">
+                    <span class="font-bold text-white">PM2.5</span>
+                    <span class="font-mono text-cyan-400 text-[10px]">Fine Aerosols</span>
+                  </div>
+                  <div id="dash-pm25-val" class="text-xl font-mono font-black text-white">142.5 µg/m³</div>
+                  <!-- Progress bar -->
+                  <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="dash-pm25-bar" class="metric-bar-fill h-full bg-rose-500" style="width: 57%;"></div>
+                  </div>
+                  <div class="text-[10px] text-rose-400">2.37x CPCB 24h limit (60 µg)</div>
+                </div>
+
+                <!-- PM10 -->
+                <div class="glass-panel p-3.5 rounded-xl border border-white/5 space-y-1.5">
+                  <div class="flex justify-between text-xs text-slate-400">
+                    <span class="font-bold text-white">PM10</span>
+                    <span class="font-mono text-cyan-400 text-[10px]">Coarse Dust</span>
+                  </div>
+                  <div id="dash-pm10-val" class="text-xl font-mono font-black text-white">235.8 µg/m³</div>
+                  <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="dash-pm10-bar" class="metric-bar-fill h-full bg-rose-500" style="width: 59%;"></div>
+                  </div>
+                  <div class="text-[10px] text-rose-400">2.35x CPCB 24h limit (100 µg)</div>
+                </div>
+
+                <!-- NO2 -->
+                <div class="glass-panel p-3.5 rounded-xl border border-white/5 space-y-1.5">
+                  <div class="flex justify-between text-xs text-slate-400">
+                    <span class="font-bold text-white">NO2</span>
+                    <span class="font-mono text-cyan-400 text-[10px]">Vehicular NOx</span>
+                  </div>
+                  <div id="dash-no2-val" class="text-xl font-mono font-black text-white">54.2 µg/m³</div>
+                  <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div class="metric-bar-fill h-full bg-emerald-500" style="width: 68%;"></div>
+                  </div>
+                  <div class="text-[10px] text-emerald-400">Within 80 µg limit</div>
+                </div>
+
+                <!-- SO2 -->
+                <div class="glass-panel p-3.5 rounded-xl border border-white/5 space-y-1.5">
+                  <div class="flex justify-between text-xs text-slate-400">
+                    <span class="font-bold text-white">SO2</span>
+                    <span class="font-mono text-cyan-400 text-[10px]">Industrial</span>
+                  </div>
+                  <div id="dash-so2-val" class="text-xl font-mono font-black text-white">14.8 µg/m³</div>
+                  <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div class="metric-bar-fill h-full bg-emerald-500" style="width: 18%;"></div>
+                  </div>
+                  <div class="text-[10px] text-emerald-400">Within 80 µg limit</div>
+                </div>
+
+                <!-- CO -->
+                <div class="glass-panel p-3.5 rounded-xl border border-white/5 space-y-1.5">
+                  <div class="flex justify-between text-xs text-slate-400">
+                    <span class="font-bold text-white">CO</span>
+                    <span class="font-mono text-cyan-400 text-[10px]">Combustion</span>
+                  </div>
+                  <div id="dash-co-val" class="text-xl font-mono font-black text-white">1.85 mg/m³</div>
+                  <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div class="metric-bar-fill h-full bg-emerald-500" style="width: 46%;"></div>
+                  </div>
+                  <div class="text-[10px] text-emerald-400">Within 4 mg limit</div>
+                </div>
+
+                <!-- O3 -->
+                <div class="glass-panel p-3.5 rounded-xl border border-white/5 space-y-1.5">
+                  <div class="flex justify-between text-xs text-slate-400">
+                    <span class="font-bold text-white">O3</span>
+                    <span class="font-mono text-cyan-400 text-[10px]">Photochemical</span>
+                  </div>
+                  <div id="dash-o3-val" class="text-xl font-mono font-black text-white">42.1 µg/m³</div>
+                  <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div class="metric-bar-fill h-full bg-emerald-500" style="width: 42%;"></div>
+                  </div>
+                  <div class="text-[10px] text-emerald-400">Within 100 µg limit</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Block 3: Coupled Weather Dynamics Grid -->
+            <div>
+              <h4 class="text-xs font-mono uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
+                <i data-lucide="cloud" class="w-4 h-4 text-cyan-400"></i>
+                <span>Coupled Atmospheric Meteorological Drivers</span>
+              </h4>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="glass-panel p-3.5 rounded-xl border border-white/5">
+                  <div class="text-xs text-slate-400 mb-1 flex items-center gap-1">
+                    <i data-lucide="thermometer" class="w-3.5 h-3.5 text-amber-400"></i>
+                    <span>Temperature</span>
+                  </div>
+                  <div id="dash-temp-val" class="text-lg font-mono font-bold text-white">21.4°C</div>
+                  <div class="text-[10px] text-slate-400">Cool ground layer</div>
+                </div>
+
+                <div class="glass-panel p-3.5 rounded-xl border border-white/5">
+                  <div class="text-xs text-slate-400 mb-1 flex items-center gap-1">
+                    <i data-lucide="droplets" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <span>Rel. Humidity</span>
+                  </div>
+                  <div id="dash-hum-val" class="text-lg font-mono font-bold text-white">68%</div>
+                  <div class="text-[10px] text-amber-400">Smog condensation</div>
+                </div>
+
+                <div class="glass-panel p-3.5 rounded-xl border border-white/5">
+                  <div class="text-xs text-slate-400 mb-1 flex items-center gap-1">
+                    <i data-lucide="wind" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    <span>Wind Vector</span>
+                  </div>
+                  <div id="dash-wind-val" class="text-lg font-mono font-bold text-white">2.2 m/s NW</div>
+                  <div class="text-[10px] text-rose-400">Calm stagnation</div>
+                </div>
+
+                <div class="glass-panel p-3.5 rounded-xl border border-white/5">
+                  <div class="text-xs text-slate-400 mb-1 flex items-center gap-1">
+                    <i data-lucide="layers" class="w-3.5 h-3.5 text-purple-400"></i>
+                    <span>Mixing Height</span>
+                  </div>
+                  <div id="dash-mix-val" class="text-lg font-mono font-bold text-white">480m</div>
+                  <div class="text-[10px] text-rose-400">Shallow boundary</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Block 4: 24h–72h Forecast Outlook Mini Bar -->
+            <div class="glass-panel p-4 rounded-xl border border-cyan-500/30 bg-cyan-950/20 flex flex-wrap items-center justify-between gap-4">
+              <div class="flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-5 h-5 text-cyan-400"></i>
+                <div>
+                  <div class="text-xs font-bold text-white">AI Coupled Predictive Forecast Horizon</div>
+                  <div class="text-[11px] text-slate-400">Diurnally-calibrated trajectory for this station</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-6 font-mono text-sm">
+                <div class="text-center">
+                  <span class="text-xs text-slate-400 block">+24h Forecast</span>
+                  <span id="dash-fc-24" class="font-black text-amber-400 text-lg">345</span>
+                  <span class="text-[9px] text-amber-400 block">Very Poor</span>
+                </div>
+                <div class="text-center">
+                  <span class="text-xs text-slate-400 block">+48h Forecast</span>
+                  <span id="dash-fc-48" class="font-black text-rose-400 text-lg">382</span>
+                  <span class="text-[9px] text-rose-400 block">Severe Risk</span>
+                </div>
+                <div class="text-center">
+                  <span class="text-xs text-slate-400 block">+72h Forecast</span>
+                  <span id="dash-fc-72" class="font-black text-orange-400 text-lg">290</span>
+                  <span class="text-[9px] text-orange-400 block">Poor</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         4. THE PROBLEM SECTION (Section 6)
+         ========================================================================= -->
+    <section id="problem" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
+      <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-mono uppercase tracking-wider">
+          <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+          <span>The Crisis in the Capital Region</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold font-heading tracking-tight text-white">
+          The Delhi-NCR Air Pollution Trap
+        </h2>
+        <p class="text-slate-300 text-base sm:text-lg font-light leading-relaxed">
+          Every winter, Delhi-NCR transforms into a dense particulate basin. Landlocked geography, 
+          continuous urban emissions, seasonal agricultural residue burning, and adverse meteorology combine 
+          to cause rapid, hazardous air quality spikes.
+        </p>
+      </div>
+
+      <!-- 6 Source Cards (Vehicular, Industrial, Construction, Stubble, Waste, Weather) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- 1. Vehicular Emissions -->
+        <div class="glass-panel glass-panel-hover p-6 rounded-2xl border border-white/10 space-y-4">
+          <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+            <i data-lucide="car" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-xl font-bold font-heading text-white">Vehicular Emissions</h3>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            Over 12 million registered vehicles in Delhi-NCR, heavy diesel interstate freight corridors, and chronic stop-and-go gridlock discharge massive volumes of fine PM2.5, NO2, and toxic polycyclic aromatic hydrocarbons.
+          </p>
+          <div class="pt-2 text-xs font-mono text-cyan-400 flex items-center gap-1">
+            <span>Contributes ~30–40% winter PM2.5</span> &rarr;
+          </div>
+        </div>
+
+        <!-- 2. Industrial Activities -->
+        <div class="glass-panel glass-panel-hover p-6 rounded-2xl border border-white/10 space-y-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+            <i data-lucide="factory" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-xl font-bold font-heading text-white">Industrial Boilers & Plants</h3>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            Unregulated industrial clusters in Ghaziabad, Faridabad, and Okhla operating coal furnaces, rubber recycling kilns, and diesel generator sets release intense plumes of sulfur dioxide (SO2) and aerosol precursors.
+          </p>
+          <div class="pt-2 text-xs font-mono text-amber-400 flex items-center gap-1">
+            <span>High SO2 & primary black carbon</span> &rarr;
+          </div>
+        </div>
+
+        <!-- 3. Construction Dust -->
+        <div class="glass-panel glass-panel-hover p-6 rounded-2xl border border-white/10 space-y-4">
+          <div class="w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400">
+            <i data-lucide="hard-hat" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-xl font-bold font-heading text-white">Construction & Demolition Dust</h3>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            Rapid real-estate development across Greater Noida, Gurugram, and Delhi resuspends coarse mineral silica and cement dust (PM10). Unpaved road shoulders magnify mechanical dust generation under vehicle tires.
+          </p>
+          <div class="pt-2 text-xs font-mono text-orange-400 flex items-center gap-1">
+            <span>Dominant source of urban PM10 spikes</span> &rarr;
+          </div>
+        </div>
+
+        <!-- 4. Stubble & Biomass Burning -->
+        <div class="glass-panel glass-panel-hover p-6 rounded-2xl border border-white/10 space-y-4">
+          <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+            <i data-lucide="flame" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-xl font-bold font-heading text-white">Stubble & Agricultural Burning</h3>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            Post-harvest paddy straw burning in Punjab and Haryana during October–November produces massive transboundary smoke corridors that travel hundreds of kilometers on north-westerly winds straight into Delhi.
+          </p>
+          <div class="pt-2 text-xs font-mono text-rose-400 flex items-center gap-1">
+            <span>Can surge AQI beyond 450 in 24 hours</span> &rarr;
+          </div>
+        </div>
+
+        <!-- 5. Waste Burning -->
+        <div class="glass-panel glass-panel-hover p-6 rounded-2xl border border-white/10 space-y-4">
+          <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+            <i data-lucide="trash-2" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-xl font-bold font-heading text-white">Open Solid Waste Incineration</h3>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            Spontaneous landfill fires at Ghazipur, Bhalswa, and Okhla dump sites alongside night-time open burning of plastic and leaf litter release toxic dioxins, furans, and carbon monoxide.
+          </p>
+          <div class="pt-2 text-xs font-mono text-purple-400 flex items-center gap-1">
+            <span>Highly toxic volatile organics & CO</span> &rarr;
+          </div>
+        </div>
+
+        <!-- 6. Adverse Weather Conditions -->
+        <div class="glass-panel glass-panel-hover p-6 rounded-2xl border border-white/10 space-y-4">
+          <div class="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
+            <i data-lucide="cloud-snow" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-xl font-bold font-heading text-white">Meteorological Inversion Trap</h3>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            Even if human emissions stay constant, weather changes everything. Low wind speed (&lt;2 m/s), dropping temperatures, and thermal inversion act as a rigid physical lid, preventing pollutants from escaping into the upper atmosphere.
+          </p>
+          <div class="pt-2 text-xs font-mono text-sky-400 flex items-center gap-1">
+            <span>The fundamental multiplier of pollution</span> &rarr;
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         5. WHY WEATHER MATTERS & INTERACTIVE WIND SIMULATOR (Section 7)
+         ========================================================================= -->
+    <section id="weather-matters" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-12">
+        <div class="lg:col-span-7 space-y-6">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono uppercase tracking-wider">
+            <i data-lucide="cloud-lightning" class="w-3.5 h-3.5"></i>
+            <span>Atmospheric Physics of Air Pollution</span>
+          </div>
+          <h2 class="text-3xl sm:text-5xl font-extrabold font-heading tracking-tight text-white">
+            Why Weather Dictates Air Pollution
+          </h2>
+          <p class="text-slate-300 text-base sm:text-lg leading-relaxed font-light">
+            Air pollution is not a static quantity. The concentration of toxic particles in the air you breathe is governed by the <strong>Ventilation Coefficient</strong>—the product of wind speed and mixing boundary height.
+          </p>
+
+          <!-- 4 Weather Pillars -->
+          <div class="grid grid-cols-2 gap-4 text-xs">
+            <div class="glass-panel p-4 rounded-xl border border-white/10">
+              <span class="font-mono font-bold text-cyan-400 block mb-1">1. THERMAL INVERSION</span>
+              <p class="text-slate-300">A warm air layer covers cold ground air like a ceiling, trapping all smoke at surface level.</p>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-white/10">
+              <span class="font-mono font-bold text-emerald-400 block mb-1">2. SURFACE WIND SPEED</span>
+              <p class="text-slate-300">Winds &lt; 2 m/s cause catastrophic pollutant stagnation; winds &gt; 5 m/s sweep particles away.</p>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-white/10">
+              <span class="font-mono font-bold text-amber-400 block mb-1">3. RELATIVE HUMIDITY</span>
+              <p class="text-slate-300">High humidity (&gt;70%) provides moisture seeds for secondary sulfate and nitrate aerosol formation.</p>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-white/10">
+              <span class="font-mono font-bold text-purple-400 block mb-1">4. MIXING HEIGHT</span>
+              <p class="text-slate-300">Shrinks from 1200m in summer to under 300m in winter, cutting atmospheric volume by 75%.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Atmospheric Pipeline Card -->
+        <div class="lg:col-span-5 glass-panel p-6 rounded-3xl border border-cyan-500/20 bg-gradient-to-b from-[#0a162a] to-[#060b14] shadow-xl">
+          <h3 class="text-base font-bold font-heading text-white mb-4 flex items-center gap-2">
+            <i data-lucide="shuffle" class="w-4 h-4 text-cyan-400"></i>
+            <span>Atmospheric Dispersion Cycle</span>
+          </h3>
+          
+          <div class="space-y-3 font-mono text-xs">
+            <div class="p-3 rounded-lg bg-slate-900 border border-white/10 flex items-center justify-between">
+              <span class="text-slate-400">Step 1: Emission</span>
+              <span class="text-cyan-300 font-bold">Vehicles / Stubble / Factories</span>
+            </div>
+            <div class="text-center text-slate-500">↓</div>
+            <div class="p-3 rounded-lg bg-slate-900 border border-white/10 flex items-center justify-between">
+              <span class="text-slate-400">Step 2: Weather Dynamics</span>
+              <span class="text-amber-300 font-bold">Temp Inversion + Calm Winds</span>
+            </div>
+            <div class="text-center text-slate-500">↓</div>
+            <div class="p-3 rounded-lg bg-slate-900 border border-white/10 flex items-center justify-between">
+              <span class="text-slate-400">Step 3: Horizontal Advection</span>
+              <span class="text-purple-300 font-bold">NW Wind Transports Smoke</span>
+            </div>
+            <div class="text-center text-slate-500">↓</div>
+            <div class="p-3 rounded-lg bg-rose-950/40 border border-rose-500/30 flex items-center justify-between">
+              <span class="text-slate-400">Step 4: Surface Trap</span>
+              <span class="text-rose-400 font-bold">Hazardous Smog Accumulation</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Atmospheric Wind Flow & Dispersion Simulator Canvas -->
+      <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-white/10 shadow-2xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/10">
+          <div>
+            <h3 class="text-xl font-bold font-heading text-white flex items-center gap-2">
+              <i data-lucide="play-circle" class="w-5 h-5 text-cyan-400"></i>
+              <span>Interactive Atmospheric Wind Flow & Inversion Simulator</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">
+              Select an atmospheric condition below to see how meteorological coupling either traps or clears particulate matter over Delhi-NCR.
+            </p>
+          </div>
+
+          <!-- Preset Switcher Buttons -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button data-preset="inversion" class="wind-preset-btn active-tab px-3.5 py-1.5 rounded-lg glass-panel border border-cyan-500/30 text-xs font-semibold hover:border-cyan-400 transition-all">
+              Nocturnal Inversion (Trap)
+            </button>
+            <button data-preset="moderate" class="wind-preset-btn px-3.5 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-semibold hover:border-cyan-400 transition-all">
+              Afternoon Convection
+            </button>
+            <button data-preset="clean" class="wind-preset-btn px-3.5 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-semibold hover:border-cyan-400 transition-all">
+              Strong Ventilation
+            </button>
+          </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="relative w-full mt-6 rounded-2xl overflow-hidden bg-slate-950 border border-white/5">
+          <canvas id="wind-flow-canvas" class="w-full block"></canvas>
+        </div>
+
+        <!-- Real-Time Simulator Telemetry Bar -->
+        <div class="mt-4 pt-4 border-t border-white/10 grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+          <div class="md:col-span-2">
+            <span class="text-slate-400 block mb-0.5 font-medium">Atmospheric Physics Assessment:</span>
+            <p id="wind-sim-status" class="text-slate-200 font-medium">
+              Severe Trap: Calm winds (&lt;1.5 m/s) and shallow boundary layer trap particulate matter at breathing level.
+            </p>
+          </div>
+          <div>
+            <span class="text-slate-400 block mb-0.5 font-medium">Surface Wind Speed:</span>
+            <span id="wind-sim-speed" class="text-cyan-400 font-mono font-bold text-sm">1.2 m/s</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block mb-0.5 font-medium">Simulated AQI Impact:</span>
+            <span id="wind-sim-aqi" class="font-mono font-bold text-sm text-purple-400">Severe (AQI 425)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         6. OUR SOLUTION & PIPELINE (Section 8)
+         ========================================================================= -->
+    <section id="solution" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
+      <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono uppercase tracking-wider">
+          <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+          <span>End-to-End System Pipeline</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold font-heading tracking-tight text-white">
+          The AirSight Forecasting Engine
+        </h2>
+        <p class="text-slate-300 text-base sm:text-lg font-light leading-relaxed">
+          AirSight links ground truth, satellite observation, and atmospheric thermodynamics through a 
+          7-stage machine learning pipeline to deliver precise 24–72 hour air quality predictions.
+        </p>
+      </div>
+
+      <!-- 7-Stage Pipeline Cards (Clickable / Expandable) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Stage 1 -->
+        <div class="solution-stage-card glass-panel glass-panel-hover p-5 rounded-2xl border border-white/10 cursor-pointer group">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-xs font-mono font-bold text-cyan-400">STAGE 01</span>
+            <span class="w-6 h-6 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400 text-xs">1</span>
+          </div>
+          <h3 class="text-base font-bold text-white group-hover:text-cyan-400 transition-colors">Data Collection</h3>
+          <p class="text-xs text-slate-400 mt-2">
+            Continuous ingestion from CPCB CAAQMS stations, IMD automatic weather stations, and local IoT sensor streams.
+          </p>
+          <div class="stage-details hidden pt-3 mt-3 border-t border-white/10 text-[11px] text-slate-300 space-y-1">
+            <p>• <strong>Protocols:</strong> REST API, MQTT, Webhooks</p>
+            <p>• <strong>Frequency:</strong> 5-minute sampling rates</p>
+            <p>• <strong>Feeds:</strong> PM2.5, PM10, Gases, Temp, Wind, RH</p>
+          </div>
+          <span class="text-[10px] text-cyan-400 block mt-3 font-mono">Click to toggle technical details &darr;</span>
+        </div>
+
+        <!-- Stage 2 -->
+        <div class="solution-stage-card glass-panel glass-panel-hover p-5 rounded-2xl border border-white/10 cursor-pointer group">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-xs font-mono font-bold text-teal-400">STAGE 02</span>
+            <span class="w-6 h-6 rounded-full bg-teal-500/10 flex items-center justify-center text-teal-400 text-xs">2</span>
+          </div>
+          <h3 class="text-base font-bold text-white group-hover:text-teal-400 transition-colors">Data Integration</h3>
+          <p class="text-xs text-slate-400 mt-2">
+            Harmonizing disparate multi-modal datasets: point ground sensors, satellite AOD grids, and arterial traffic densities.
+          </p>
+          <div class="stage-details hidden pt-3 mt-3 border-t border-white/10 text-[11px] text-slate-300 space-y-1">
+            <p>• <strong>Sources:</strong> Sentinel-5P, INSAT-3D, Google Traffic</p>
+            <p>• <strong>Spatial Interpolation:</strong> Kriging & IDW</p>
+            <p>• <strong>Storage:</strong> TimescaleDB spatial partitions</p>
+          </div>
+          <span class="text-[10px] text-teal-400 block mt-3 font-mono">Click to toggle technical details &darr;</span>
+        </div>
+
+        <!-- Stage 3 -->
+        <div class="solution-stage-card glass-panel glass-panel-hover p-5 rounded-2xl border border-white/10 cursor-pointer group">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-xs font-mono font-bold text-emerald-400">STAGE 03</span>
+            <span class="w-6 h-6 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-xs">3</span>
+          </div>
+          <h3 class="text-base font-bold text-white group-hover:text-emerald-400 transition-colors">Data Processing</h3>
+          <p class="text-xs text-slate-400 mt-2">
+            Automated sensor drift correction, missing value imputation, outlier pruning, and temporal lag feature engineering.
+          </p>
+          <div class="stage-details hidden pt-3 mt-3 border-t border-white/10 text-[11px] text-slate-300 space-y-1">
+            <p>• <strong>Imputation:</strong> Iterative KNN & forward fill</p>
+            <p>• <strong>Outliers:</strong> Isolation Forest algorithm</p>
+            <p>• <strong>Features:</strong> Rolling 3h, 6h, 24h lag windows</p>
+          </div>
+          <span class="text-[10px] text-emerald-400 block mt-3 font-mono">Click to toggle technical details &darr;</span>
+        </div>
+
+        <!-- Stage 4 -->
+        <div class="solution-stage-card glass-panel glass-panel-hover p-5 rounded-2xl border border-white/10 cursor-pointer group">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-xs font-mono font-bold text-indigo-400">STAGE 04</span>
+            <span class="w-6 h-6 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 text-xs">4</span>
+          </div>
+          <h3 class="text-base font-bold text-white group-hover:text-indigo-400 transition-colors">AI/ML Forecasting</h3>
+          <p class="text-xs text-slate-400 mt-2">
+            Deep spatial-temporal neural networks model non-linear interactions between weather vectors and particulate plumes.
+          </p>
+          <div class="stage-details hidden pt-3 mt-3 border-t border-white/10 text-[11px] text-slate-300 space-y-1">
+            <p>• <strong>Models:</strong> Bi-LSTM, XGBoost, ST-GNN</p>
+            <p>• <strong>Coupling:</strong> HRRR numerical weather inputs</p>
+            <p>• <strong>Loss:</strong> Physics-guided asymmetric error</p>
+          </div>
+          <span class="text-[10px] text-indigo-400 block mt-3 font-mono">Click to toggle technical details &darr;</span>
+        </div>
+
+        <!-- Stage 5 -->
+        <div class="solution-stage-card glass-panel glass-panel-hover p-5 rounded-2xl border border-white/10 cursor-pointer group">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-xs font-mono font-bold text-purple-400">STAGE 05</span>
+            <span class="w-6 h-6 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 text-xs">5</span>
+          </div>
+          <h3 class="text-base font-bold text-white group-hover:text-purple-400 transition-colors">Multi-Step Forecast</h3>
+          <p class="text-xs text-slate-400 mt-2">
+            Generates rolling +6h, +12h, +24h, +48h, and +72h hourly trajectory curves with 95% Bayesian confidence intervals.
+          </p>
+          <div class="stage-details hidden pt-3 mt-3 border-t border-white/10 text-[11px] text-slate-300 space-y-1">
+            <p>• <strong>Resolution:</strong> Hourly discrete steps</p>
+            <p>• <strong>Uncertainty:</strong> Monte Carlo dropout bounds</p>
+            <p>• <strong>Spatial Granularity:</strong> Station and ward level</p>
+          </div>
+          <span class="text-[10px] text-purple-400 block mt-3 font-mono">Click to toggle technical details &darr;</span>
+        </div>
+
+        <!-- Stage 6 -->
+        <div class="solution-stage-card glass-panel glass-panel-hover p-5 rounded-2xl border border-white/10 cursor-pointer group">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-xs font-mono font-bold text-rose-400">STAGE 06</span>
+            <span class="w-6 h-6 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400 text-xs">6</span>
+          </div>
+          <h3 class="text-base font-bold text-white group-hover:text-rose-400 transition-colors">Risk Analysis</h3>
+          <p class="text-xs text-slate-400 mt-2">
+            Maps predicted aerosol concentrations to statutory National AQI categories and evaluates cumulative health exposure risks.
+          </p>
+          <div class="stage-details hidden pt-3 mt-3 border-t border-white/10 text-[11px] text-slate-300 space-y-1">
+            <p>• <strong>Standards:</strong> CPCB NAQI & WHO 2021</p>
+            <p>• <strong>Cohorts:</strong> Pediatric, geriatric, asthma alerts</p>
+            <p>• <strong>Categorization:</strong> Moderate &rarr; Severe+</p>
+          </div>
+          <span class="text-[10px] text-rose-400 block mt-3 font-mono">Click to toggle technical details &darr;</span>
+        </div>
+
+        <!-- Stage 7 -->
+        <div class="solution-stage-card glass-panel glass-panel-hover p-5 rounded-2xl border border-white/10 cursor-pointer group lg:col-span-2">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-xs font-mono font-bold text-amber-400">STAGE 07</span>
+            <span class="w-6 h-6 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 text-xs">7</span>
+          </div>
+          <h3 class="text-base font-bold text-white group-hover:text-amber-400 transition-colors">Early Warning & Targeted Interventions</h3>
+          <p class="text-xs text-slate-400 mt-2">
+            Dispatches automated GRAP-compliant policy advisories to municipal bodies (anti-smog cannons, traffic diversions) and delivers hyper-local push alerts to citizens.
+          </p>
+          <div class="stage-details hidden pt-3 mt-3 border-t border-white/10 text-[11px] text-slate-300 space-y-1">
+            <p>• <strong>Channels:</strong> Web Dashboard, REST Webhooks, SMS / WhatsApp Gateway</p>
+            <p>• <strong>Compliance:</strong> Aligned with CAQM GRAP-I to GRAP-IV mandates</p>
+          </div>
+          <span class="text-[10px] text-amber-400 block mt-3 font-mono">Click to toggle technical details &darr;</span>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         7. DATA SOURCES (Section 9 & 13)
+         ========================================================================= -->
+    <section id="data-sources" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
+      <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono uppercase tracking-wider">
+          <i data-lucide="database" class="w-3.5 h-3.5"></i>
+          <span>Multi-Modal Data Fusion</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold font-heading tracking-tight text-white">
+          Multiple Sources. One Intelligent Platform.
+        </h2>
+        <p class="text-slate-300 text-base sm:text-lg font-light leading-relaxed">
+          No single sensor can capture the complex air dynamics of a 55,000 km² megalopolis. AirSight integrates five distinct spatial and atmospheric data streams.
+        </p>
+      </div>
+
+      <!-- 5 Large Visual Data Source Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- 1. Air-Quality Monitoring Stations -->
+        <div class="glass-panel glass-panel-hover p-6 rounded-2xl border border-white/10 space-y-4">
+          <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+            <i data-lucide="radio" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-xl font-bold font-heading text-white">1. CAAQMS Ground Stations</h3>
+          <p class="text-sm text-slate-300">
+            Official continuous ambient air quality monitoring stations operated by CPCB, DPCC, and UPPCB providing high-precision reference measurements of PM2.5, PM10, and regulatory gases.
+          </p>
+          <div class="text-xs font-mono text-cyan-400">
+            Gold-standard reference ground truth
+          </div>
+        </div>
+
+        <!-- 2. Weather Sensors (AWS) -->
+        <div class="glass-panel glass-panel-hover p-6 rounded-2xl border border-white/10 space-y-4">
+          <div class="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400">
+            <i data-lucide="cloud-sun" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-xl font-bold font-heading text-white">2. Meteorological Weather Stations</h3>
+          <p class="text-sm text-slate-300">
+            India Meteorological Department (IMD) surface synoptic networks and Doppler weather radars tracking temperature profiles, surface winds, barometric trends, and mixing boundary layers.
+          </p>
+          <div class="text-xs font-mono text-teal-400">
+            Captures atmospheric ventilation volume
+          </div>
+        </div>
+
+        <!-- 3. Satellite Remote Sensing -->
+        <div class="glass-panel glass-panel-hover p-6 rounded-2xl border border-white/10 space-y-4">
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+            <i data-lucide="satellite" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-xl font-bold font-heading text-white">3. Earth Observation Satellites</h3>
+          <p class="text-sm text-slate-300">
+            Copernicus Sentinel-5P (TROPOMI) tropospheric column NO2 and INSAT-3D/MODIS Aerosol Optical Depth (AOD) mapping transboundary stubble smoke plumes across the Indo-Gangetic Plain.
+          </p>
+          <div class="text-xs font-mono text-indigo-400">
+            Wide-area regional smoke tracking
+          </div>
+        </div>
+
+        <!-- 4. Urban Traffic Feeds -->
+        <div class="glass-panel glass-panel-hover p-6 rounded-2xl border border-white/10 space-y-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+            <i data-lucide="navigation" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-xl font-bold font-heading text-white">4. Arterial Traffic Congestion Data</h3>
+          <p class="text-sm text-slate-300">
+            Real-time geospatial traffic speed vectors and bottleneck indicators along Outer Ring Road, DND Flyway, and NH-48 serving as high-resolution vehicular emission proxies.
+          </p>
+          <div class="text-xs font-mono text-amber-400">
+            Dynamic urban emission intensity
+          </div>
+        </div>
+
+        <!-- 5. Historical Weather & Pollution Records -->
+        <div class="glass-panel glass-panel-hover p-6 rounded-2xl border border-white/10 space-y-4 md:col-span-2 lg:col-span-2">
+          <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+            <i data-lucide="history" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-xl font-bold font-heading text-white">5. Multi-Year Historical Meteorological Archives</h3>
+          <p class="text-sm text-slate-300">
+            A decade of coupled historical climate and air quality records for Delhi-NCR, allowing machine learning algorithms to learn recurring diurnal patterns, festive firecracker spikes, and seasonal agricultural burning cycles.
+          </p>
+          <div class="text-xs font-mono text-purple-400">
+            Enables long-horizon supervised feature learning
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         8. SENSORS & IOT VISUALIZATION (Sections 10 & 11)
+         ========================================================================= -->
+    <section id="sensors" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
+      <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-400 text-xs font-mono uppercase tracking-wider">
+          <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
+          <span>Hyper-Local Edge Monitoring</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold font-heading tracking-tight text-white">
+          Sensors & Environmental IoT Architecture
+        </h2>
+        <p class="text-slate-300 text-base sm:text-lg font-light leading-relaxed">
+          While government CAAQMS stations cost upwards of ₹1.5 crore each, AirSight designs an edge-compatible IoT sensor architecture that can be deployed across streetlight poles and transit fleets.
+        </p>
+      </div>
+
+      <!-- Interactive IoT Telemetry Pipeline Animation (Requirement 11) -->
+      <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-cyan-500/30 mb-12 bg-gradient-to-b from-slate-900/90 to-[#060b14] shadow-2xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
+          <div>
+            <h3 class="text-lg font-bold font-heading text-white flex items-center gap-2">
+              <i data-lucide="workflow" class="w-5 h-5 text-cyan-400"></i>
+              <span>Interactive IoT Sensor-to-Dashboard Telemetry Bus</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">
+              Live visualization of sensor telemetry packets traveling from edge hardware to cloud AI and citizen dashboards.
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-slate-400 font-mono">SIMULATED TELEMETRY PACKETS:</span>
+            <span id="iot-packet-counter" class="text-cyan-400 font-mono font-bold text-sm bg-cyan-950/60 px-3 py-1 rounded-lg border border-cyan-800">
+              18,420
+            </span>
+          </div>
+        </div>
+
+        <!-- IoT Canvas -->
+        <div class="relative w-full mt-6 rounded-2xl overflow-hidden bg-slate-950 border border-white/5">
+          <canvas id="iot-pipeline-canvas" class="w-full block"></canvas>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+          <span>Transport: TLS 1.3 / MQTT Broker over 4G-LTE Cellular</span>
+          <span class="font-mono text-emerald-400">Edge Latency: ~140ms</span>
+          <span>Buffer: Local SPIFFS Flash Memory during cellular outages</span>
+        </div>
+      </div>
+
+      <!-- Candidate Prototype Sensor Grid (Requirement 10) -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-bold font-heading text-white">Evaluated Candidate Hardware Components</h3>
+          <span class="demo-badge">CANDIDATE PROTOTYPE HARDWARE</span>
+        </div>
+        <p class="text-xs text-slate-400">
+          Evaluated sensor families for field-deployable low-cost environmental monitoring nodes.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+          
+          <!-- PM Sensor -->
+          <div class="glass-panel p-5 rounded-xl border border-white/10 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-cyan-400 font-bold text-sm">PM2.5 / PM10 Sensor</span>
+              <i data-lucide="activity" class="w-4 h-4 text-cyan-400"></i>
+            </div>
+            <p class="text-xs text-slate-300">Laser scattering chamber counting aerosol size bins.</p>
+            <div class="text-[11px] font-mono text-slate-400 pt-1">
+              <strong>Example:</strong> Plantower PMS5003 / Sensirion SPS30
+            </div>
+          </div>
+
+          <!-- Temp & Humidity -->
+          <div class="glass-panel p-5 rounded-xl border border-white/10 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-teal-400 font-bold text-sm">Temp & Humidity</span>
+              <i data-lucide="thermometer" class="w-4 h-4 text-teal-400"></i>
+            </div>
+            <p class="text-xs text-slate-300">Band-gap silicon + capacitive polymer element.</p>
+            <div class="text-[11px] font-mono text-slate-400 pt-1">
+              <strong>Example:</strong> Sensirion SHT31 / DHT22 / BME280
+            </div>
+          </div>
+
+          <!-- Barometric Pressure -->
+          <div class="glass-panel p-5 rounded-xl border border-white/10 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-emerald-400 font-bold text-sm">Atmospheric Pressure</span>
+              <i data-lucide="gauge" class="w-4 h-4 text-emerald-400"></i>
+            </div>
+            <p class="text-xs text-slate-300">Piezo-resistive pressure sensor for anticyclone tracking.</p>
+            <div class="text-[11px] font-mono text-slate-400 pt-1">
+              <strong>Example:</strong> Bosch BME280 / BMP280 (I2C bus)
+            </div>
+          </div>
+
+          <!-- Wind Anemometer -->
+          <div class="glass-panel p-5 rounded-xl border border-white/10 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-sky-400 font-bold text-sm">Wind Speed & Direction</span>
+              <i data-lucide="wind" class="w-4 h-4 text-sky-400"></i>
+            </div>
+            <p class="text-xs text-slate-300">Solid-state ultrasonic acoustic vector transducer.</p>
+            <div class="text-[11px] font-mono text-slate-400 pt-1">
+              <strong>Example:</strong> Ultrasonic Anemometer / Hall Vane
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         9. SCIENTIFIC POLLUTANTS GUIDE (Section 12)
+         ========================================================================= -->
+    <section id="pollutants" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
+      <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs font-mono uppercase tracking-wider">
+          <i data-lucide="microscope" class="w-3.5 h-3.5"></i>
+          <span>Atmospheric Chemistry Guide</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold font-heading tracking-tight text-white">
+          Understanding Key Atmospheric Pollutants
+        </h2>
+        <p class="text-slate-300 text-base sm:text-lg font-light leading-relaxed">
+          AirSight models all primary particulate fractions and precursor gases established by the 
+          Central Pollution Control Board (CPCB) National Ambient Air Quality Standards (NAAQS).
+        </p>
+      </div>
+
+      <!-- Pollutant Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <div class="glass-panel p-6 rounded-2xl border border-white/10 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-2xl font-black font-mono text-rose-400">PM2.5</span>
+            <span class="text-xs font-mono text-slate-400">&le; 2.5 µm</span>
+          </div>
+          <h3 class="text-lg font-bold text-white">Fine Inhalable Particulate Matter</h3>
+          <p class="text-xs text-slate-300">
+            Combustion particles from diesel engines, stubble burning, and secondary sulfate/nitrate synthesis. Deeply penetrates terminal bronchioles and enters systemic circulation.
+          </p>
+          <div class="pt-2 border-t border-white/10 flex justify-between text-[11px] font-mono text-slate-400">
+            <span>CPCB 24h Limit: <b class="text-cyan-400">60 µg/m³</b></span>
+            <span>WHO Limit: <b class="text-emerald-400">15 µg/m³</b></span>
+          </div>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-white/10 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-2xl font-black font-mono text-amber-400">PM10</span>
+            <span class="text-xs font-mono text-slate-400">&le; 10 µm</span>
+          </div>
+          <h3 class="text-lg font-bold text-white">Coarse Inhalable Particulates</h3>
+          <p class="text-xs text-slate-300">
+            Crushed aggregate, construction demolition dust, unpaved road resuspension, and regional windblown crustal soils. Irritates upper respiratory airways and eyes.
+          </p>
+          <div class="pt-2 border-t border-white/10 flex justify-between text-[11px] font-mono text-slate-400">
+            <span>CPCB 24h Limit: <b class="text-cyan-400">100 µg/m³</b></span>
+            <span>WHO Limit: <b class="text-emerald-400">45 µg/m³</b></span>
+          </div>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-white/10 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-2xl font-black font-mono text-indigo-400">NO2</span>
+            <span class="text-xs font-mono text-slate-400">Oxides of Nitrogen</span>
+          </div>
+          <h3 class="text-lg font-bold text-white">Nitrogen Dioxide</h3>
+          <p class="text-xs text-slate-300">
+            Formed in high-temperature combustion in diesel commercial transport and gas-fired power plants. Acts as the primary chemical catalyst for ground-level ozone formation.
+          </p>
+          <div class="pt-2 border-t border-white/10 flex justify-between text-[11px] font-mono text-slate-400">
+            <span>CPCB 24h Limit: <b class="text-cyan-400">80 µg/m³</b></span>
+            <span>WHO Limit: <b class="text-emerald-400">25 µg/m³</b></span>
+          </div>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-white/10 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-2xl font-black font-mono text-yellow-400">SO2</span>
+            <span class="text-xs font-mono text-slate-400">Sulfur Compound</span>
+          </div>
+          <h3 class="text-lg font-bold text-white">Sulfur Dioxide</h3>
+          <p class="text-xs text-slate-300">
+            Emitted by heavy furnace oil, coal-fired brick kilns, and industrial boilers across the NCR perimeter. Readily oxidizes in high humidity to form secondary sulfuric aerosols.
+          </p>
+          <div class="pt-2 border-t border-white/10 flex justify-between text-[11px] font-mono text-slate-400">
+            <span>CPCB 24h Limit: <b class="text-cyan-400">80 µg/m³</b></span>
+            <span>WHO Limit: <b class="text-emerald-400">40 µg/m³</b></span>
+          </div>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-white/10 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-2xl font-black font-mono text-cyan-400">CO</span>
+            <span class="text-xs font-mono text-slate-400">Carbon Oxide</span>
+          </div>
+          <h3 class="text-lg font-bold text-white">Carbon Monoxide</h3>
+          <p class="text-xs text-slate-300">
+            Incomplete combustion from idling vehicular traffic in Delhi traffic bottlenecks and open biomass fires. Reduces oxygen carriage in hemoglobin blood cells.
+          </p>
+          <div class="pt-2 border-t border-white/10 flex justify-between text-[11px] font-mono text-slate-400">
+            <span>CPCB 1h Limit: <b class="text-cyan-400">4 mg/m³</b></span>
+            <span>WHO Limit: <b class="text-emerald-400">4 mg/m³</b></span>
+          </div>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-white/10 space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-2xl font-black font-mono text-emerald-400">O3 & VOCs</span>
+            <span class="text-xs font-mono text-slate-400">Photochemical Smog</span>
+          </div>
+          <h3 class="text-lg font-bold text-white">Ground-Level Ozone & VOCs</h3>
+          <p class="text-xs text-slate-300">
+            Secondary photochemical pollutants generated when sunlight reacts with vehicular VOCs and NOx. Peaks during sunny afternoons; highly irritating to pulmonary tissues.
+          </p>
+          <div class="pt-2 border-t border-white/10 flex justify-between text-[11px] font-mono text-slate-400">
+            <span>CPCB 8h Limit: <b class="text-cyan-400">100 µg/m³</b></span>
+            <span>WHO Limit: <b class="text-emerald-400">100 µg/m³</b></span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         10. DATA PROCESSING PIPELINE (Section 14)
+         ========================================================================= -->
+    <section id="data-processing" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
+      <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono uppercase tracking-wider">
+          <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+          <span>Feature Engineering Pipeline</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold font-heading tracking-tight text-white">
+          Robust Real-Time Data Preparation
+        </h2>
+        <p class="text-slate-300 text-base sm:text-lg font-light leading-relaxed">
+          Raw sensor feeds cannot be fed directly to machine learning models. AirSight enforces an 8-step data preparation pipeline to ensure zero missing gaps and eliminate sensor noise.
+        </p>
+      </div>
+
+      <!-- 8-Step Interactive Transformation Pipeline -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-2">
+          <span class="text-xs font-mono text-cyan-400 font-bold">STEP 01</span>
+          <h3 class="text-sm font-bold text-white">Raw Ingestion Stream</h3>
+          <p class="text-xs text-slate-400">Heterogeneous JSON/CSV telemetry from CAAQMS and edge IoT microcontrollers.</p>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-2">
+          <span class="text-xs font-mono text-teal-400 font-bold">STEP 02</span>
+          <h3 class="text-sm font-bold text-white">Missing Data Imputation</h3>
+          <p class="text-xs text-slate-400">Iterative spatial KNN and temporal spline interpolation to fill communication dropouts.</p>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-2">
+          <span class="text-xs font-mono text-emerald-400 font-bold">STEP 03</span>
+          <h3 class="text-sm font-bold text-white">Outlier Detection</h3>
+          <p class="text-xs text-slate-400">Isolation Forest filtering optical dust spikes and electrical noise artifacts.</p>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-2">
+          <span class="text-xs font-mono text-indigo-400 font-bold">STEP 04</span>
+          <h3 class="text-sm font-bold text-white">Duplicate Handling</h3>
+          <p class="text-xs text-slate-400">Hash-based message deduplication across redundant cellular retry buffers.</p>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-2">
+          <span class="text-xs font-mono text-purple-400 font-bold">STEP 05</span>
+          <h3 class="text-sm font-bold text-white">Timestamp Alignment</h3>
+          <p class="text-xs text-slate-400">Resampling irregular sensor frequencies onto uniform 15-minute and 1-hour temporal buckets.</p>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-2">
+          <span class="text-xs font-mono text-pink-400 font-bold">STEP 06</span>
+          <h3 class="text-sm font-bold text-white">Geospatial Mapping</h3>
+          <p class="text-xs text-slate-400">Aligning point sensor coordinates with Sentinel-5P 5.5km satellite grid rasters.</p>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-2">
+          <span class="text-xs font-mono text-amber-400 font-bold">STEP 07</span>
+          <h3 class="text-sm font-bold text-white">Feature Lag Engineering</h3>
+          <p class="text-xs text-slate-400">Deriving wind direction components (u, v vectors), ventilation coefficients, and diurnal cyclics.</p>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 space-y-2">
+          <span class="text-xs font-mono text-emerald-400 font-bold">STEP 08</span>
+          <h3 class="text-sm font-bold text-emerald-300">AI/ML Ready Tensor</h3>
+          <p class="text-xs text-slate-300">Normalized, scaled 3D tensors ready for spatial-temporal deep neural batch inference.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         11. AI/ML ENGINE & CANDIDATE MODELS (Sections 15 & 17)
+         ========================================================================= -->
+    <section id="ai-engine" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
+      <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono uppercase tracking-wider">
+          <i data-lucide="brain" class="w-3.5 h-3.5"></i>
+          <span>The Intelligence Behind AirSight</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold font-heading tracking-tight text-white">
+          AI/ML Weather-Coupled Neural Engine
+        </h2>
+        <p class="text-slate-300 text-base sm:text-lg font-light leading-relaxed">
+          AirSight models the physical world. Our forecasting engine continuously learns the mathematical coupling between 
+          <span class="text-cyan-300 font-semibold">Weather + Particulates + Time-of-Day + Spatial Adjacency</span> 
+          to forecast future pollution dynamics.
+        </p>
+      </div>
+
+      <!-- Candidate Model Approaches (Requirement 17) -->
+      <div class="space-y-4 mb-16">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-bold font-heading text-white">Candidate Forecasting Approaches Under Evaluation</h3>
+          <span class="demo-badge">RESEARCH BENCHMARK</span>
+        </div>
+        <p class="text-xs text-slate-400">
+          Comparing traditional statistical benchmarks with state-of-the-art spatial-temporal deep learning architectures.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+          
+          <!-- Traditional -->
+          <div class="glass-panel p-6 rounded-2xl border border-white/10 space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded bg-slate-800 text-slate-300 font-mono text-xs font-bold">TIER 1</span>
+              <h4 class="font-bold text-white text-base">Traditional Time-Series</h4>
+            </div>
+            <div class="space-y-3 text-xs text-slate-300">
+              <div class="p-3 rounded-lg bg-slate-900/80 border border-white/5">
+                <strong class="text-cyan-300 block mb-1">ARIMA / SARIMAX</strong>
+                <p>Captures linear auto-regressive trends and diurnal seasonality. Serves as transparent statistical benchmark.</p>
+                <div class="text-[10px] text-amber-400 mt-1">Limitation: Cannot model complex non-linear wind-inversion dynamics.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Machine Learning -->
+          <div class="glass-panel p-6 rounded-2xl border border-white/10 space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded bg-slate-800 text-cyan-300 font-mono text-xs font-bold">TIER 2</span>
+              <h4 class="font-bold text-white text-base">Tree-Based Ensembles</h4>
+            </div>
+            <div class="space-y-3 text-xs text-slate-300">
+              <div class="p-3 rounded-lg bg-slate-900/80 border border-white/5">
+                <strong class="text-cyan-300 block mb-1">XGBoost & LightGBM</strong>
+                <p>Gradient-boosted decision trees trained on multi-lag weather features (wind speed, mixing height, humidity, traffic index).</p>
+                <div class="text-[10px] text-emerald-400 mt-1">Advantage: Fast inference and high tabular accuracy on 24h horizons.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Deep Learning -->
+          <div class="glass-panel p-6 rounded-2xl border border-cyan-500/30 glow-cyan space-y-4 bg-gradient-to-b from-cyan-950/20 to-[#060b14]">
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-1 rounded bg-cyan-500/20 text-cyan-300 font-mono text-xs font-bold">TIER 3</span>
+              <h4 class="font-bold text-white text-base">Deep Spatial-Temporal Networks</h4>
+            </div>
+            <div class="space-y-3 text-xs text-slate-300">
+              <div class="p-3 rounded-lg bg-slate-900/80 border border-white/5">
+                <strong class="text-cyan-300 block mb-1">Bi-LSTM + Temporal Attention / ST-GNN</strong>
+                <p>Graph Convolutional layers encode Delhi-NCR road networks while Attention mechanisms highlight nocturnal thermal inversion anomalies.</p>
+                <div class="text-[10px] text-emerald-400 mt-1">State-of-the-Art for 48h–72h multi-station horizon forecasting.</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         12. TIME-SERIES FORECAST STUDIO & 72H PREDICTION (Sections 16 & 18, Requirement 5)
+         ========================================================================= -->
+    <section id="forecast-studio" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
+      <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-mono uppercase tracking-wider">
+          <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+          <span>Predictive Analytics Engine</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold font-heading tracking-tight text-white">
+          24–72 Hour Coupled Time-Series Forecasting
+        </h2>
+        <p class="text-slate-300 text-base sm:text-lg font-light leading-relaxed">
+          Explore past observed pollutant levels against AI coupled forward predictions across Delhi-NCR.
+        </p>
+        <div class="inline-flex items-center gap-2 text-xs font-mono text-amber-300 bg-amber-950/60 px-4 py-1.5 rounded-full border border-amber-800">
+          <i data-lucide="info" class="w-3.5 h-3.5"></i>
+          <span>Demo Forecast — Connect live CAAQMS / IMD data feed to display actual operational predictions.</span>
+        </div>
+      </div>
+
+      <!-- Chart Control Bar & Visual Studio -->
+      <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-white/10 mb-8 shadow-2xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/10">
+          <!-- Metric Selectors -->
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-mono text-slate-400 uppercase font-bold">Target Variable:</span>
+            <button id="chart-btn-aqi" class="active-tab px-4 py-1.5 rounded-lg glass-panel border border-cyan-500/40 text-xs font-bold transition-all">
+              Composite AQI
+            </button>
+            <button id="chart-btn-pm25" class="px-4 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-bold hover:border-cyan-400 transition-all">
+              PM2.5 (µg/m³)
+            </button>
+          </div>
+
+          <!-- Weather Toggle -->
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-300">
+              <input type="checkbox" id="chart-toggle-weather" checked class="w-4 h-4 rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-cyan-400">
+              <span>Show Surface Wind Speed Overlay (m/s)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Chart Container -->
+        <div class="relative w-full h-[400px] mt-6">
+          <canvas id="forecast-chart-canvas"></canvas>
+        </div>
+
+        <!-- Atmospheric Coupling Explanatory Card (Requirement 5) -->
+        <div class="mt-6 pt-4 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-purple-500/30 space-y-1">
+            <strong class="text-purple-300 flex items-center gap-1.5">
+              <i data-lucide="moon" class="w-3.5 h-3.5"></i>
+              <span>Nocturnal Inversion Trap (00:00–06:00 IST)</span>
+            </strong>
+            <p class="text-slate-300 text-[11px] font-sans">
+              Surface cooling drops mixing layer to 260m and decelerates wind to 1.1 m/s &rarr; Zero vertical ventilation causes particulate matter to peak into <strong>Severe (AQI 418)</strong>.
+            </p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-900/80 border border-cyan-500/30 space-y-1">
+            <strong class="text-cyan-300 flex items-center gap-1.5">
+              <i data-lucide="sun" class="w-3.5 h-3.5"></i>
+              <span>Diurnal Solar Convection (12:00–16:00 IST)</span>
+            </strong>
+            <p class="text-slate-300 text-[11px] font-sans">
+              Solar radiation expands the boundary layer up to 720m, accelerating surface winds to 3.4 m/s &rarr; Mechanical dilution relieves pollutant concentration to <strong>Poor (AQI 315)</strong>.
+            </p>
+          </div>
+        </div>
+
+        <!-- Time-Series Legend & Region Indicators -->
+        <div class="mt-4 pt-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-400">
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded-full bg-sky-400"></span>
+              <span>Past 24h (Observed Ground Truth)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+              <span>Next 72h (AI Coupled Forecast)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-1 bg-rose-500/30"></span>
+              <span>95% Bayesian Confidence Interval</span>
+            </div>
+          </div>
+          <span class="font-mono text-cyan-300">Observation Window: T-24h to T+72h</span>
+        </div>
+      </div>
+
+      <!-- 24–72 Hour Horizon Selector Cards (Requirement 18 & 5) -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-bold font-heading text-white">Inspect Specific Forecast Horizons</h3>
+          <span class="text-xs font-mono text-slate-400">Click timeline pill below to inspect</span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 pb-2">
+          <button data-horizon="+6h" class="horizon-tab-btn active-tab px-4 py-2.5 rounded-xl glass-panel border border-cyan-500/40 text-xs font-mono font-bold transition-all flex items-center gap-2">
+            <span>+6h</span>
+            <span class="text-rose-400 font-black">AQI 345</span>
+            <span class="text-[10px] text-slate-400 font-normal">(Evening Peak)</span>
+          </button>
+          <button data-horizon="+12h" class="horizon-tab-btn px-4 py-2.5 rounded-xl glass-panel border border-white/10 text-xs font-mono font-bold hover:border-cyan-400 transition-all flex items-center gap-2">
+            <span>+12h</span>
+            <span class="text-purple-400 font-black">AQI 418</span>
+            <span class="text-[10px] text-slate-400 font-normal">(Inversion Peak)</span>
+          </button>
+          <button data-horizon="+24h" class="horizon-tab-btn px-4 py-2.5 rounded-xl glass-panel border border-white/10 text-xs font-mono font-bold hover:border-cyan-400 transition-all flex items-center gap-2">
+            <span>+24h</span>
+            <span class="text-amber-400 font-black">AQI 315</span>
+            <span class="text-[10px] text-slate-400 font-normal">(Next Day)</span>
+          </button>
+          <button data-horizon="+48h" class="horizon-tab-btn px-4 py-2.5 rounded-xl glass-panel border border-white/10 text-xs font-mono font-bold hover:border-cyan-400 transition-all flex items-center gap-2">
+            <span>+48h</span>
+            <span class="text-rose-400 font-black">AQI 330</span>
+            <span class="text-[10px] text-slate-400 font-normal">(2-Day Lead)</span>
+          </button>
+          <button data-horizon="+72h" class="horizon-tab-btn px-4 py-2.5 rounded-xl glass-panel border border-white/10 text-xs font-mono font-bold hover:border-cyan-400 transition-all flex items-center gap-2">
+            <span>+72h</span>
+            <span class="text-orange-400 font-black">AQI 305</span>
+            <span class="text-[10px] text-slate-400 font-normal">(3-Day Horizon)</span>
+          </button>
+        </div>
+
+        <!-- Active Horizon Drilldown Card -->
+        <div class="glass-panel p-6 rounded-2xl border border-white/10 bg-gradient-to-r from-slate-900 to-[#0c182d] shadow-xl">
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+            
+            <div class="md:col-span-4 border-r border-white/10 pr-4">
+              <span id="slice-time" class="text-xs font-mono text-cyan-400 uppercase tracking-wider block mb-1 font-bold">
+                Today 20:00 (+6h)
+              </span>
+              <div class="flex items-baseline gap-3">
+                <span id="slice-aqi" class="text-5xl font-black font-mono text-rose-500">345</span>
+                <span id="slice-category" class="text-lg font-bold text-rose-500 font-heading">Very Poor</span>
+              </div>
+              <div class="text-xs text-slate-400 mt-2">
+                Coupled Inversion Risk: <strong id="slice-inversion" class="text-white font-mono">Moderate Inversion</strong>
+              </div>
+            </div>
+
+            <div class="md:col-span-8 space-y-3">
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div class="p-2.5 rounded-lg bg-slate-950/60 border border-white/5">
+                  <span class="text-slate-400 block font-medium">Forecast PM2.5:</span>
+                  <strong id="slice-pm25" class="text-white font-mono text-sm">228 µg/m³</strong>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-950/60 border border-white/5">
+                  <span class="text-slate-400 block font-medium">Forecast PM10:</span>
+                  <strong id="slice-pm10" class="text-white font-mono text-sm">360 µg/m³</strong>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-950/60 border border-white/5">
+                  <span class="text-slate-400 block font-medium">Wind Forecast:</span>
+                  <strong id="slice-wind" class="text-cyan-400 font-mono text-sm">1.9 m/s (NW)</strong>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-950/60 border border-white/5">
+                  <span class="text-slate-400 block font-medium">Temp Forecast:</span>
+                  <strong id="slice-temp" class="text-amber-400 font-mono text-sm">19°C</strong>
+                </div>
+              </div>
+
+              <div class="p-3 rounded-lg bg-slate-950/80 border border-white/5 text-xs text-slate-300 flex items-start gap-2">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-cyan-400 shrink-0 mt-0.5"></i>
+                <div>
+                  <span class="font-bold text-white">Early Warning Advisory: </span>
+                  <span id="slice-advisory">Evening peak traffic coupled with boundary layer contraction. Limit outdoor exercise.</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         13. DELHI-NCR INTERACTIVE POLLUTION HEATMAP (Section 20 & 19, Requirement 6)
+         ========================================================================= -->
+    <section id="delhi-map" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
+      <div class="text-center max-w-3xl mx-auto mb-12 space-y-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono uppercase tracking-wider">
+          <i data-lucide="map" class="w-3.5 h-3.5"></i>
+          <span>Spatial GIS Intelligence</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold font-heading tracking-tight text-white">
+          Interactive Delhi-NCR Pollution Heatmap
+        </h2>
+        <p class="text-slate-300 text-base sm:text-lg font-light leading-relaxed">
+          Explore real-time spatial air quality and predictive risk across Delhi, Noida, Gurugram, Ghaziabad, and Faridabad. 
+          Click on any station marker or use the quick-selection toolbar to synchronize the dashboard.
+        </p>
+      </div>
+
+      <!-- Quick Station Selector Toolbar (Requirement 6) -->
+      <div class="glass-panel p-4 rounded-2xl border border-white/10 mb-6 shadow-lg">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 mb-3 border-b border-white/10">
+          <span class="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="target" class="w-4 h-4 text-cyan-400"></i>
+            <span>QUICK-SELECT DELHI-NCR MONITORING CORRIDOR:</span>
+          </span>
+          <span class="text-[11px] font-mono text-slate-400">Clicking station centers map and synchronizes dashboard</span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button data-station-id="delhi-central" class="map-station-quick-btn active-tab px-3 py-1.5 rounded-lg glass-panel border border-cyan-500/40 text-xs font-mono font-bold transition-all flex items-center gap-1.5">
+            <span>Central Delhi</span>
+            <span class="text-orange-400 font-bold">288</span>
+          </button>
+          <button data-station-id="delhi-east" class="map-station-quick-btn px-3 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-mono font-bold hover:border-cyan-400 transition-all flex items-center gap-1.5">
+            <span>Anand Vihar</span>
+            <span class="text-purple-400 font-bold">412</span>
+          </button>
+          <button data-station-id="delhi-west" class="map-station-quick-btn px-3 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-mono font-bold hover:border-cyan-400 transition-all flex items-center gap-1.5">
+            <span>Punjabi Bagh</span>
+            <span class="text-rose-400 font-bold">334</span>
+          </button>
+          <button data-station-id="noida-sec62" class="map-station-quick-btn px-3 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-mono font-bold hover:border-cyan-400 transition-all flex items-center gap-1.5">
+            <span>Noida Sec 62</span>
+            <span class="text-rose-400 font-bold">315</span>
+          </button>
+          <button data-station-id="gurugram-vikas" class="map-station-quick-btn px-3 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-mono font-bold hover:border-cyan-400 transition-all flex items-center gap-1.5">
+            <span>Gurugram NH-48</span>
+            <span class="text-orange-400 font-bold">275</span>
+          </button>
+          <button data-station-id="ghaziabad-vas" class="map-station-quick-btn px-3 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-mono font-bold hover:border-cyan-400 transition-all flex items-center gap-1.5">
+            <span>Ghaziabad</span>
+            <span class="text-rose-400 font-bold">388</span>
+          </button>
+          <button data-station-id="faridabad-nit" class="map-station-quick-btn px-3 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-mono font-bold hover:border-cyan-400 transition-all flex items-center gap-1.5">
+            <span>Faridabad NIT</span>
+            <span class="text-orange-400 font-bold">295</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Map Container Card -->
+      <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-white/10 shadow-2xl">
+        <!-- Leaflet Map Container -->
+        <div id="delhi-map-container" class="w-full h-[520px] rounded-2xl overflow-hidden border border-white/10 z-10"></div>
+
+        <!-- Heatmap AQI Scale Legend -->
+        <div class="mt-6 pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
+          <div class="text-xs font-mono font-bold text-slate-400 uppercase">
+            National AQI Scale:
+          </div>
+          <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-mono">
+            <div class="flex items-center gap-1.5">
+              <span class="w-3.5 h-3.5 rounded bg-[#10b981]"></span>
+              <span>Good (0–50)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-3.5 h-3.5 rounded bg-[#84cc16]"></span>
+              <span>Satisfactory (51–100)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-3.5 h-3.5 rounded bg-[#eab308]"></span>
+              <span>Moderate (101–200)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-3.5 h-3.5 rounded bg-[#f97316]"></span>
+              <span>Poor (201–300)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-3.5 h-3.5 rounded bg-[#ef4444]"></span>
+              <span>Very Poor (301–400)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-3.5 h-3.5 rounded bg-[#9333ea]"></span>
+              <span>Severe (401–500)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         14. EARLY WARNING SYSTEM & ALERT SIMULATOR (Section 21, Requirement 8)
+         ========================================================================= -->
+    <section id="early-warning" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
+      <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-mono uppercase tracking-wider">
+          <i data-lucide="bell-ring" class="w-3.5 h-3.5"></i>
+          <span>Automated Emergency Response</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold font-heading tracking-tight text-white">
+          Early Warning & Incident Simulator
+        </h2>
+        <p class="text-slate-300 text-base sm:text-lg font-light leading-relaxed">
+          AirSight doesn't just display numbers; it automates preventative action. When 24–72h forecasts breach critical thresholds, 
+          actionable advisories are generated for municipal authorities and vulnerable citizens.
+        </p>
+      </div>
+
+      <!-- Interactive Scenario Simulator Controls -->
+      <div class="glass-panel p-6 rounded-3xl border border-white/10 mb-8 shadow-2xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base font-bold font-heading text-white">Simulate Incident Scenarios (Judges Test Bed)</h3>
+              <span class="demo-badge">SIMULATED SCENARIO DRILL</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">Click any scenario below to evaluate the automated early warning protocol trigger.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button data-scenario="stubble" class="scenario-btn active-tab px-3.5 py-1.5 rounded-lg glass-panel border border-purple-500/40 text-xs font-bold transition-all">
+              Biomass Stubble Episode
+            </button>
+            <button data-scenario="inversion" class="scenario-btn px-3.5 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-bold hover:border-rose-400 transition-all">
+              Shallow Inversion Trap
+            </button>
+            <button data-scenario="washout" class="scenario-btn px-3.5 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-bold hover:border-emerald-400 transition-all">
+              Rain Washout Clearance
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Main Alert Broadcast Card -->
+        <div id="main-alert-card" class="mt-6 glass-panel rounded-2xl p-6 sm:p-8 border border-rose-500/40 bg-gradient-to-r from-rose-950/30 to-[#0d1629] space-y-6 shadow-xl">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <span class="w-3.5 h-3.5 rounded-full bg-rose-500 animate-ping"></span>
+              <span id="alert-banner-level" class="text-xs font-mono font-black uppercase px-3 py-1 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                SEVERE WARNING (GRAP-IV)
+              </span>
+            </div>
+            <div class="text-xs font-mono text-amber-400 flex items-center gap-1">
+              <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+              <span>Simulated Prototype Warning — Valid for 24-Hour Horizon</span>
+            </div>
+          </div>
+
+          <div>
+            <h4 id="alert-banner-headline" class="text-2xl sm:text-3xl font-black font-heading text-white tracking-tight">
+              Critical Atmospheric Inversion & Transboundary Plume Anticipated (Next 24h)
+            </h4>
+            <p id="alert-banner-details" class="text-sm text-slate-300 mt-2 leading-relaxed max-w-4xl">
+              Coupled forecasting models indicate persistent calm winds (&lt;1.4 m/s) and boundary layer contraction to 290m over Anand Vihar, Ghaziabad and Noida corridors. AQI expected to exceed 420.
+            </p>
+          </div>
+
+          <!-- Impact Zones -->
+          <div>
+            <span class="text-xs font-mono uppercase tracking-wider text-slate-400 block mb-2 font-medium">Impacted Spatial Corridors:</span>
+            <div id="alert-banner-zones" class="flex flex-wrap gap-2">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Action Protocol Checklist -->
+          <div class="pt-4 border-t border-white/10">
+            <span class="text-xs font-mono uppercase tracking-wider text-cyan-400 block mb-3 font-bold">
+              Automated GRAP-IV Action Protocols:
+            </span>
+            <ul id="alert-banner-actions" class="text-xs text-slate-300 space-y-2">
+              <!-- Populated dynamically -->
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         15. SYSTEM ARCHITECTURE & USER JOURNEY (Sections 24 & 23)
+         ========================================================================= -->
+    <section id="architecture" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
+      <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono uppercase tracking-wider">
+          <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+          <span>Full Stack Engineering</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold font-heading tracking-tight text-white">
+          7-Layer End-to-End System Architecture
+        </h2>
+        <p class="text-slate-300 text-base sm:text-lg font-light leading-relaxed">
+          A scalable, production-grade software stack designed to handle continuous high-velocity sensor streams and deliver sub-second forecast queries.
+        </p>
+      </div>
+
+      <!-- 7 Architecture Layers Stack -->
+      <div class="space-y-3 font-mono text-xs">
+        <div class="glass-panel p-4 rounded-xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <span class="text-cyan-400 font-bold">LAYER 1: DATA SOURCES</span>
+          <span class="text-slate-300">CPCB CAAQMS Stations • IMD Weather AWS • Sentinel-5P Satellite • Urban Traffic Sensors</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <span class="text-teal-400 font-bold">LAYER 2: DATA INTEGRATION</span>
+          <span class="text-slate-300">Apache Kafka Ingestion • MQTT Gateway • Geo-Spatial Interpolation (Kriging Engine)</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <span class="text-emerald-400 font-bold">LAYER 3: DATA PROCESSING</span>
+          <span class="text-slate-300">Missing Data KNN Imputation • Isolation Forest Outlier Rejection • Temporal Feature Resampling</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-indigo-500/30 bg-indigo-950/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <span class="text-indigo-400 font-bold">LAYER 4: AI/ML ENGINE</span>
+          <span class="text-slate-200 font-bold">Coupled Spatial-Temporal GNN • Bi-LSTM with Temporal Attention • XGBoost Residual Correctors</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <span class="text-purple-400 font-bold">LAYER 5: FORECAST ENGINE</span>
+          <span class="text-slate-300">Rolling 24h/48h/72h Horizons • Bayesian Uncertainty Bounds • Diurnal Cycle Calibrator</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <span class="text-rose-400 font-bold">LAYER 6: DASHBOARD & ALERTS</span>
+          <span class="text-slate-300">FastAPI REST Server • Interactive Leaflet Heatmap • GRAP Advisory Generator • Push Webhooks</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-amber-500/30 bg-amber-950/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <span class="text-amber-400 font-bold">LAYER 7: CITIZENS & DECISION MAKERS</span>
+          <span class="text-slate-200 font-bold">Public Health Advisories • Municipal Anti-Smog Sprayers • School Schedule Adjustments • Traffic Police</span>
+        </div>
+      </div>
+
+      <!-- User Journey Flow (Requirement 23) -->
+      <div class="mt-16 pt-12 border-t border-white/5">
+        <h3 class="text-xl font-bold font-heading text-white text-center mb-8">The AirSight User Journey</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 text-center text-xs font-mono">
+          <div class="glass-panel p-3 rounded-xl border border-white/10">
+            <span class="text-cyan-400 font-bold block mb-1">01</span>
+            <span>OPEN AIRSIGHT</span>
+          </div>
+          <div class="glass-panel p-3 rounded-xl border border-white/10">
+            <span class="text-cyan-400 font-bold block mb-1">02</span>
+            <span>SELECT LOCATION</span>
+          </div>
+          <div class="glass-panel p-3 rounded-xl border border-white/10">
+            <span class="text-cyan-400 font-bold block mb-1">03</span>
+            <span>VIEW CURRENT AQI</span>
+          </div>
+          <div class="glass-panel p-3 rounded-xl border border-white/10">
+            <span class="text-cyan-400 font-bold block mb-1">04</span>
+            <span>CHECK WEATHER</span>
+          </div>
+          <div class="glass-panel p-3 rounded-xl border border-white/10">
+            <span class="text-cyan-400 font-bold block mb-1">05</span>
+            <span>72H FORECAST</span>
+          </div>
+          <div class="glass-panel p-3 rounded-xl border border-white/10">
+            <span class="text-cyan-400 font-bold block mb-1">06</span>
+            <span>EXPLORE MAP</span>
+          </div>
+          <div class="glass-panel p-3 rounded-xl border border-rose-500/30">
+            <span class="text-rose-400 font-bold block mb-1">07</span>
+            <span>EARLY WARNING</span>
+          </div>
+          <div class="glass-panel p-3 rounded-xl border border-emerald-500/40 bg-emerald-950/20">
+            <span class="text-emerald-400 font-bold block mb-1">08</span>
+            <span>INFORMED ACTION</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         16. TECHNOLOGY STACK & FEASIBILITY (Sections 25, 26, 27, 28)
+         ========================================================================= -->
+    <section id="tech-stack" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        
+        <!-- Technology Cards (Requirement 25) -->
+        <div class="lg:col-span-7 space-y-6">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono uppercase tracking-wider">
+            <i data-lucide="terminal" class="w-3.5 h-3.5"></i>
+            <span>Engineering Stack</span>
+          </div>
+          <h2 class="text-3xl sm:text-4xl font-extrabold font-heading tracking-tight text-white">
+            Production-Grade Technologies
+          </h2>
+
+          <div class="grid grid-cols-2 gap-4 text-xs">
+            <div class="glass-panel p-4 rounded-xl border border-white/10">
+              <strong class="text-cyan-400 block mb-1 font-bold">Python Ecosystem</strong>
+              <p class="text-slate-300">Pandas, NumPy, Scikit-learn, PyTorch for neural tensor computation and spatial graph modeling.</p>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-white/10">
+              <strong class="text-teal-400 block mb-1 font-bold">Time-Series & Weather</strong>
+              <p class="text-slate-300">Statsmodels, XGBoost, NetCDF4 / Xarray for handling IMD and ECMWF meteorological grids.</p>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-white/10">
+              <strong class="text-emerald-400 block mb-1 font-bold">Cloud & Databases</strong>
+              <p class="text-slate-300">TimescaleDB (PostgreSQL time-series extension), Redis caching layer, Docker containerization.</p>
+            </div>
+            <div class="glass-panel p-4 rounded-xl border border-white/10">
+              <strong class="text-indigo-400 block mb-1 font-bold">Web Platform</strong>
+              <p class="text-slate-300">Modern responsive frontend, Chart.js for time-series analytics, Leaflet GIS spatial mapping.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feasibility & Multi-City Expansion (Requirement 26) -->
+        <div class="lg:col-span-5 glass-panel p-6 rounded-3xl border border-white/10 space-y-4 shadow-xl">
+          <h3 class="text-lg font-bold font-heading text-white flex items-center gap-2">
+            <i data-lucide="expand" class="w-5 h-5 text-emerald-400"></i>
+            <span>Feasibility & PAN-India Scaling</span>
+          </h3>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            AirSight is built to scale beyond Delhi-NCR. Because it couples freely accessible satellite imagery (Sentinel-5P) with IMD weather forecasts, the same machine learning pipelines can be fine-tuned for other non-attainment cities across the Indo-Gangetic Plain.
+          </p>
+          <div class="space-y-2 pt-2 text-xs font-mono">
+            <div class="p-2.5 rounded-lg bg-slate-900 border border-white/5 flex justify-between">
+              <span>Phase 1 (Active):</span>
+              <strong class="text-cyan-300">Delhi-NCR Pilot (7 Corridors)</strong>
+            </div>
+            <div class="p-2.5 rounded-lg bg-slate-900 border border-white/5 flex justify-between">
+              <span>Phase 2 (Proposed):</span>
+              <strong class="text-teal-300">Kanpur, Lucknow, Agra</strong>
+            </div>
+            <div class="p-2.5 rounded-lg bg-slate-900 border border-white/5 flex justify-between">
+              <span>Phase 3 (Proposed):</span>
+              <strong class="text-emerald-300">Patna, Varanasi, Kolkata</strong>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Challenges & AirSight Strategies (Requirement 27 & 28) -->
+      <div class="mt-16 pt-12 border-t border-white/5">
+        <h3 class="text-xl font-bold font-heading text-white text-center mb-8">Technical Challenges & AirSight Solutions</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-2">
+            <div class="text-rose-400 font-mono text-xs font-bold">CHALLENGE 1: SENSOR DRIFT & GAPS</div>
+            <p class="text-xs text-slate-300">Low-cost sensors suffer from dust occlusion and humidity drift.</p>
+            <div class="pt-2 text-xs text-emerald-400 font-medium">
+              <strong>Strategy:</strong> Dynamic calibration against reference CPCB gold stations + KNN imputation.
+            </div>
+          </div>
+
+          <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-2">
+            <div class="text-rose-400 font-mono text-xs font-bold">CHALLENGE 2: SUDDEN WEATHER SHIFTS</div>
+            <p class="text-xs text-slate-300">Rapid wind drop or evening cooling causes non-linear smog spikes.</p>
+            <div class="pt-2 text-xs text-emerald-400 font-medium">
+              <strong>Strategy:</strong> Real-time numerical weather integration with physics-guided loss penalization.
+            </div>
+          </div>
+
+          <div class="glass-panel p-5 rounded-2xl border border-white/10 space-y-2">
+            <div class="text-rose-400 font-mono text-xs font-bold">CHALLENGE 3: TRANSIENT STUBBLE PULSES</div>
+            <p class="text-xs text-slate-300">Agricultural burning introduces sudden massive smoke plumes.</p>
+            <div class="pt-2 text-xs text-emerald-400 font-medium">
+              <strong>Strategy:</strong> Ingesting daily satellite fire counts (VIIRS) as dynamic upwind boundary conditions.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         17. IMPACT, BENEFITS & FUTURE SCOPE (Sections 29, 30, 31)
+         ========================================================================= -->
+    <section id="impact" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-white/5">
+      <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono uppercase tracking-wider">
+          <i data-lucide="award" class="w-3.5 h-3.5"></i>
+          <span>Value Proposition</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold font-heading tracking-tight text-white">
+          Tangible Real-World Impact
+        </h2>
+        <p class="text-slate-300 text-base sm:text-lg font-light leading-relaxed">
+          AirSight shifts environmental management from reactive regret to proactive preparedness.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="glass-panel p-6 rounded-2xl border border-white/10 space-y-3">
+          <i data-lucide="heart-pulse" class="w-8 h-8 text-rose-400"></i>
+          <h3 class="text-base font-bold text-white">Public Health Protection</h3>
+          <p class="text-xs text-slate-300">Advance warning allows schools, asthmatics, and senior citizens to avoid outdoor exposure during peak inversion hours.</p>
+        </div>
+        <div class="glass-panel p-6 rounded-2xl border border-white/10 space-y-3">
+          <i data-lucide="spray-can" class="w-8 h-8 text-cyan-400"></i>
+          <h3 class="text-base font-bold text-white">Targeted Anti-Smog Spraying</h3>
+          <p class="text-xs text-slate-300">Municipal mist cannons and mechanical road sweepers are deployed precisely where and when severe spikes are predicted.</p>
+        </div>
+        <div class="glass-panel p-6 rounded-2xl border border-white/10 space-y-3">
+          <i data-lucide="traffic-cone" class="w-8 h-8 text-amber-400"></i>
+          <h3 class="text-base font-bold text-white">Dynamic Traffic Diversions</h3>
+          <p class="text-xs text-slate-300">Enables traffic police to divert heavy freight transit away from choking micro-basins before thermal stagnation sets in.</p>
+        </div>
+        <div class="glass-panel p-6 rounded-2xl border border-white/10 space-y-3">
+          <i data-lucide="trending-down" class="w-8 h-8 text-emerald-400"></i>
+          <h3 class="text-base font-bold text-white">Cost-Effective Scalability</h3>
+          <p class="text-xs text-slate-300">Software and edge IoT architecture reduces dependence on multi-crore CAAQMS hardware while increasing spatial density.</p>
+        </div>
+      </div>
+
+      <!-- Future Scope (Requirement 31) -->
+      <div class="mt-12 glass-panel p-8 rounded-3xl border border-white/10 bg-gradient-to-r from-slate-900 via-[#0d1c33] to-slate-900 shadow-2xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <span class="text-xs font-mono text-cyan-400 uppercase tracking-wider font-bold">FUTURE HORIZONS</span>
+            <h3 class="text-2xl font-bold font-heading text-white mt-1">AirSight 2.0 Roadmap</h3>
+            <p class="text-xs text-slate-300 mt-2 max-w-2xl">
+              Integrating drone-mounted vertical boundary layer sounding, citizen-participatory IoT wearables, automated air-purifier smart-plug triggers, and source apportionment via spectral isotope modeling.
+            </p>
+          </div>
+          <div class="flex items-center gap-4 text-xs font-mono text-slate-300 shrink-0">
+            <div class="flex items-center gap-2">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+              <span>Edge AI</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+              <span>Drone Profiling</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+              <span>Mobile App</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         18. FINAL CORE MESSAGE & PHILOSOPHY (Section 41)
+         ========================================================================= -->
+    <section class="py-24 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto text-center relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent pointer-events-none"></div>
+
+      <div class="space-y-8 relative z-10">
+        <blockquote class="text-2xl sm:text-4xl font-extrabold font-heading text-white tracking-tight leading-snug">
+          &ldquo;Most air-quality platforms tell you what the air is like now.<br/>
+          <span class="text-gradient-cyan">AirSight aims to tell you what the air is likely to be tomorrow.&rdquo;</span>
+        </blockquote>
+
+        <!-- Equation Box -->
+        <div class="glass-panel p-6 rounded-2xl border border-cyan-500/30 inline-block glow-cyan max-w-3xl shadow-2xl">
+          <div class="flex flex-wrap items-center justify-center gap-3 font-mono text-xs sm:text-sm font-bold text-slate-200">
+            <span class="px-3 py-1 rounded bg-slate-800 text-cyan-300">REAL-TIME DATA</span>
+            <span class="text-cyan-400">+</span>
+            <span class="px-3 py-1 rounded bg-slate-800 text-teal-300">WEATHER INTELLIGENCE</span>
+            <span class="text-cyan-400">+</span>
+            <span class="px-3 py-1 rounded bg-slate-800 text-emerald-300">AI/ML</span>
+            <span class="text-cyan-400">+</span>
+            <span class="px-3 py-1 rounded bg-slate-800 text-indigo-300">LOCATION AWARENESS</span>
+            <span class="text-cyan-400">=</span>
+            <span class="px-4 py-1 rounded bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 font-black">
+              EARLY POLLUTION FORECASTING
+            </span>
+          </div>
+        </div>
+
+        <div class="text-base sm:text-lg font-mono font-bold tracking-widest text-cyan-400 uppercase">
+          Predict &rarr; Alert &rarr; Prepare &rarr; Act
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =========================================================================
+       19. FLOATING TOAST NOTIFICATION FOR HOTSPOT SELECTION
+       ========================================================================= -->
+  <div id="station-toast" class="toast-hidden fixed bottom-6 right-6 z-50 glass-panel p-4 rounded-2xl border border-cyan-500/40 shadow-2xl flex items-center gap-3 max-w-md bg-slate-900/95">
+    <div class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+      <i data-lucide="check" class="w-4 h-4"></i>
+    </div>
+    <div class="text-xs">
+      <div id="station-toast-text" class="text-slate-200 font-medium">
+        Active Station Synchronized.
+      </div>
+      <div class="text-[10px] text-slate-400 font-mono mt-0.5">
+        Dashboard & 72h forecast curves updated.
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       20. FOOTER (Section 35)
+       ========================================================================= -->
+  <footer class="border-t border-white/10 bg-[#04080f] py-16 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-12 pb-12 border-b border-white/5">
+      
+      <!-- Team & Branding -->
+      <div class="md:col-span-5 space-y-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-cyan-500 to-emerald-400 p-0.5">
+            <div class="w-full h-full bg-[#060b14] rounded-[6px] flex items-center justify-center">
+              <i data-lucide="wind" class="w-5 h-5 text-cyan-400"></i>
+            </div>
+          </div>
+          <span class="text-xl font-black font-heading tracking-tight text-white">Air<span class="text-cyan-400">Sight</span></span>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed max-w-sm">
+          AI-Powered Air Pollution & Weather Coupled Forecasting System for Delhi-NCR. Built for Smart India Hackathon 2026.
+        </p>
+        <div class="pt-2 text-xs font-mono text-slate-400 space-y-1">
+          <div>Problem Statement ID: <strong class="text-white">SIH26082</strong></div>
+          <div>Category: <strong class="text-white">Software</strong> | Theme: <strong class="text-emerald-400">Clean & Green Technology</strong></div>
+          <div>Development Team: <strong class="text-cyan-400">TechNova</strong></div>
+        </div>
+      </div>
+
+      <!-- Quick Nav Links -->
+      <div class="md:col-span-4 space-y-3">
+        <h4 class="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold">Platform Sections</h4>
+        <div class="grid grid-cols-2 gap-2 text-xs text-slate-400">
+          <a href="#problem" class="hover:text-cyan-400 transition-colors">The Problem</a>
+          <a href="#weather-matters" class="hover:text-cyan-400 transition-colors">Why Weather</a>
+          <a href="#solution" class="hover:text-cyan-400 transition-colors">How It Works</a>
+          <a href="#sensors" class="hover:text-cyan-400 transition-colors">IoT Sensors</a>
+          <a href="#ai-engine" class="hover:text-cyan-400 transition-colors">AI/ML Engine</a>
+          <a href="#forecast-studio" class="hover:text-cyan-400 transition-colors">72h Forecast</a>
+          <a href="#delhi-map" class="hover:text-cyan-400 transition-colors">Live Heatmap</a>
+          <a href="#early-warning" class="hover:text-cyan-400 transition-colors">Alerts System</a>
+        </div>
+      </div>
+
+      <!-- Data Honesty Disclaimer (Section 38) -->
+      <div class="md:col-span-3 space-y-3">
+        <h4 class="text-xs font-mono uppercase tracking-wider text-amber-400 font-bold flex items-center gap-1">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+          <span>Data Honesty Notice</span>
+        </h4>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          AirSight is presented with representative demo telemetry to demonstrate coupled atmospheric forecasting models. Real-world deployment connects to live CPCB CAAQMS and IMD Doppler APIs.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Bottom Copyright -->
+    <div class="max-w-7xl mx-auto pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+      <p>&copy; 2026 AirSight • Team TechNova • Smart India Hackathon 2026</p>
+      <div class="flex items-center gap-4">
+        <span>Clean & Green Technology</span>
+        <span>•</span>
+        <span>Delhi-NCR Focus</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Leaflet.js -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Application Scripts -->
+  <script src="js/data/delhi-ncr-data.js"></script>
+  <script src="js/data/forecast-data.js"></script>
+  <script src="js/data/sensors-data.js"></script>
+
+  <script src="js/components/wind-canvas.js"></script>
+  <script src="js/components/iot-simulation.js"></script>
+  <script src="js/components/forecast-chart.js"></script>
+  <script src="js/components/map-heatmap.js"></script>
+  <script src="js/components/alert-system.js"></script>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
