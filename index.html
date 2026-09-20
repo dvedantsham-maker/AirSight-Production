@@ -675,6 +675,163 @@
 
         </div>
 
+        <!-- Block 5: Interactive Coupled Time-Series Forecast Studio (Live Prototype Dashboard) -->
+        <div class="mt-8 glass-panel rounded-3xl p-6 sm:p-8 border border-white/10 shadow-2xl bg-slate-900/60 backdrop-blur-xl">
+          <!-- Card Header & Metadata -->
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/10">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono font-semibold flex items-center gap-1.5">
+                  <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+                  <span>AI/ML Coupled Time-Series Forecast</span>
+                </span>
+                <span class="chart-active-horizon-label px-2.5 py-0.5 rounded-full bg-slate-800 border border-white/10 text-cyan-300 text-xs font-mono font-bold">+72h Window</span>
+              </div>
+              <h3 class="text-xl sm:text-2xl font-bold font-heading text-white">
+                Coupled Atmospheric Predictive Trajectory: <span class="chart-active-station-title text-cyan-400">Central Delhi (Mandir Marg / CP)</span>
+              </h3>
+              <p class="text-xs sm:text-sm text-slate-300 font-light mt-0.5">
+                Past 24h observed ground truth vs AI-predicted multi-step trajectory coupled with IMD boundary layer meteorology.
+              </p>
+            </div>
+
+            <!-- Risk Status Indicator -->
+            <div class="flex items-center gap-3">
+              <div class="text-right hidden sm:block font-mono">
+                <div class="text-[11px] text-slate-400 uppercase">Forecast Risk Level</div>
+                <div class="text-xs text-slate-300">Peak Exposure Outlook</div>
+              </div>
+              <span id="chart-forecast-risk" class="chart-forecast-risk px-3 py-1.5 rounded-xl text-xs font-mono font-bold border text-purple-400 border-purple-500/40 bg-purple-500/10">
+                Severe Hazard
+              </span>
+            </div>
+          </div>
+
+          <!-- Controls Toolbar: Metric Selectors + Horizon Filters + Weather Toggle -->
+          <div class="py-4 border-b border-white/10 flex flex-wrap items-center justify-between gap-4">
+            <!-- Metric Toggle Buttons (AQI / PM2.5 / PM10) -->
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-xs font-mono uppercase tracking-wider text-slate-400 font-bold mr-1">Metric:</span>
+              <button data-metric="aqi" class="chart-metric-btn active-tab px-3.5 py-1.5 rounded-lg glass-panel border border-cyan-500/40 text-xs font-bold text-white transition-all flex items-center gap-1.5">
+                <i data-lucide="activity" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span>Composite AQI</span>
+              </button>
+              <button data-metric="pm25" class="chart-metric-btn px-3.5 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-bold text-slate-400 hover:text-white hover:border-cyan-400 transition-all flex items-center gap-1.5">
+                <i data-lucide="atom" class="w-3.5 h-3.5 text-rose-400"></i>
+                <span>PM2.5 (µg/m³)</span>
+              </button>
+              <button data-metric="pm10" class="chart-metric-btn px-3.5 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-bold text-slate-400 hover:text-white hover:border-cyan-400 transition-all flex items-center gap-1.5">
+                <i data-lucide="wind" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>PM10 (Coarse Dust)</span>
+              </button>
+            </div>
+
+            <!-- Horizon Filter Buttons (24H / 48H / 72H) -->
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-xs font-mono uppercase tracking-wider text-slate-400 font-bold mr-1">Forecast Horizon:</span>
+              <button data-horizon="24" class="chart-horizon-btn px-3.5 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-mono font-bold text-slate-300 hover:border-cyan-400 hover:text-white transition-all">
+                24H Horizon
+              </button>
+              <button data-horizon="48" class="chart-horizon-btn px-3.5 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-mono font-bold text-slate-300 hover:border-cyan-400 hover:text-white transition-all">
+                48H Horizon
+              </button>
+              <button data-horizon="72" class="chart-horizon-btn active-tab px-3.5 py-1.5 rounded-lg glass-panel border border-cyan-500/40 text-xs font-mono font-bold text-cyan-300 transition-all">
+                72H Horizon (Full)
+              </button>
+            </div>
+
+            <!-- Weather Overlay Checkbox -->
+            <div class="flex items-center">
+              <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-300 hover:text-white transition-colors">
+                <input type="checkbox" checked class="chart-weather-toggle w-4 h-4 rounded border-slate-700 bg-slate-800 text-emerald-500 focus:ring-emerald-400">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="wind" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span>Surface Wind Speed (m/s)</span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Summary Indicators Bar -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-5">
+            <div class="glass-panel p-3 rounded-xl border border-white/5 bg-slate-950/40">
+              <div class="text-[11px] font-mono text-slate-400 mb-0.5">CURRENT OBSERVED (T0)</div>
+              <div id="chart-current-val" class="chart-current-val text-xl sm:text-2xl font-mono font-black text-sky-400">288 AQI</div>
+              <div class="text-[10px] text-slate-400 font-sans mt-0.5">Ground station truth</div>
+            </div>
+            <div class="glass-panel p-3 rounded-xl border border-white/5 bg-slate-950/40">
+              <div class="text-[11px] font-mono text-slate-400 mb-0.5">FORECAST PEAK (MAX)</div>
+              <div id="chart-forecast-max" class="chart-forecast-max text-xl sm:text-2xl font-mono font-black text-rose-500">432 AQI</div>
+              <div class="text-[10px] text-rose-400/80 font-sans mt-0.5">Peak nocturnal surge</div>
+            </div>
+            <div class="glass-panel p-3 rounded-xl border border-white/5 bg-slate-950/40">
+              <div class="text-[11px] font-mono text-slate-400 mb-0.5">FORECAST VALLEY (MIN)</div>
+              <div id="chart-forecast-min" class="chart-forecast-min text-xl sm:text-2xl font-mono font-black text-emerald-400">290 AQI</div>
+              <div class="text-[10px] text-emerald-400/80 font-sans mt-0.5">Daytime solar dispersion</div>
+            </div>
+            <div class="glass-panel p-3 rounded-xl border border-white/5 bg-slate-950/40">
+              <div class="text-[11px] font-mono text-slate-400 mb-0.5">WINDOW AVERAGE</div>
+              <div id="chart-forecast-avg" class="chart-forecast-avg text-xl sm:text-2xl font-mono font-black text-amber-400">368.5 AQI</div>
+              <div class="text-[10px] text-slate-400 font-sans mt-0.5">Diurnally calibrated mean</div>
+            </div>
+          </div>
+
+          <!-- Responsive Chart Canvas Container -->
+          <div class="relative w-full h-[360px] sm:h-[400px] mt-2">
+            <canvas id="dashboard-forecast-canvas"></canvas>
+          </div>
+
+          <!-- Time-Series Legend & Region Indicators -->
+          <div class="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-400">
+            <div class="flex flex-wrap items-center gap-4">
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-sky-400"></span>
+                <span class="text-slate-200 font-medium">Past 24h Observed Ground Truth</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-1 bg-rose-500 border-t border-b border-rose-400"></span>
+                <span class="text-slate-200 font-medium">AI Coupled Forecast Horizon</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3.5 h-2.5 rounded bg-rose-500/25 border border-rose-400/40"></span>
+                <span class="text-slate-200 font-medium">95% Bayesian Confidence Interval</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-1 border-t-2 border-dashed border-emerald-400"></span>
+                <span class="text-slate-200 font-medium">Surface Wind Velocity (m/s)</span>
+              </div>
+            </div>
+            <div class="font-mono text-cyan-400 text-xs flex items-center gap-1.5">
+              <i data-lucide="crosshair" class="w-3.5 h-3.5"></i>
+              <span>Origin Landmark: NOW [T0]</span>
+            </div>
+          </div>
+
+          <!-- Atmospheric Coupling Explanatory Insight Cards -->
+          <div class="mt-4 pt-4 border-t border-white/5 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
+            <div class="p-3 rounded-xl bg-slate-950/70 border border-purple-500/30 space-y-1">
+              <strong class="text-purple-300 flex items-center gap-1.5">
+                <i data-lucide="moon" class="w-3.5 h-3.5"></i>
+                <span>Nocturnal Thermal Inversion Dynamics (00:00–06:00 IST)</span>
+              </strong>
+              <p class="text-slate-300 text-[11px] font-sans">
+                Radiative surface cooling contracts the planetary boundary mixing layer to &lt;280m while surface wind decelerates to ~1.1 m/s. Trapped particulate emissions trigger severe AQI surges.
+              </p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-950/70 border border-cyan-500/30 space-y-1">
+              <strong class="text-cyan-300 flex items-center gap-1.5">
+                <i data-lucide="sun" class="w-3.5 h-3.5"></i>
+                <span>Diurnal Solar Convection &amp; Ventilation (12:00–16:00 IST)</span>
+              </strong>
+              <p class="text-slate-300 text-[11px] font-sans">
+                Strong daytime insolation expands vertical boundary layer up to 750m and accelerates wind to ~3.5 m/s, causing mechanical aerosol dilution and lower AQI concentrations.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
       </div>
     </section>
 
@@ -1551,29 +1708,77 @@
 
       <!-- Chart Control Bar & Visual Studio -->
       <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-white/10 mb-8 shadow-2xl">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/10">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-white/10">
+          <div>
+            <div class="text-xs font-mono text-cyan-400 font-semibold mb-1">STATION FOCUS: <span class="chart-active-station-title">Central Delhi</span></div>
+            <h3 class="text-xl sm:text-2xl font-bold font-heading text-white">Full-Scale 72-Hour Atmospheric Forecast</h3>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="chart-active-horizon-label px-3 py-1 rounded-lg bg-slate-800 text-cyan-300 font-mono text-xs border border-white/10">+72h Window</span>
+            <span class="chart-forecast-risk px-2.5 py-1 rounded-full text-xs font-mono font-bold border text-purple-400 border-purple-500/40 bg-purple-500/10">Severe Hazard</span>
+          </div>
+        </div>
+
+        <div class="py-4 border-b border-white/10 flex flex-wrap items-center justify-between gap-4">
           <!-- Metric Selectors -->
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-mono text-slate-400 uppercase font-bold">Target Variable:</span>
-            <button id="chart-btn-aqi" class="active-tab px-4 py-1.5 rounded-lg glass-panel border border-cyan-500/40 text-xs font-bold transition-all">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-mono uppercase text-slate-400 font-bold mr-1">Variable:</span>
+            <button data-metric="aqi" class="chart-metric-btn active-tab px-3.5 py-1.5 rounded-lg glass-panel border border-cyan-500/40 text-xs font-bold text-white transition-all">
               Composite AQI
             </button>
-            <button id="chart-btn-pm25" class="px-4 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-bold hover:border-cyan-400 transition-all">
+            <button data-metric="pm25" class="chart-metric-btn px-3.5 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-bold text-slate-400 hover:text-white transition-all">
               PM2.5 (µg/m³)
+            </button>
+            <button data-metric="pm10" class="chart-metric-btn px-3.5 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-bold text-slate-400 hover:text-white transition-all">
+              PM10 (µg/m³)
+            </button>
+          </div>
+
+          <!-- Horizon Selectors -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-mono uppercase text-slate-400 font-bold mr-1">Horizon:</span>
+            <button data-horizon="24" class="chart-horizon-btn px-3.5 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-mono font-bold text-slate-300 hover:border-cyan-400 transition-all">
+              24H
+            </button>
+            <button data-horizon="48" class="chart-horizon-btn px-3.5 py-1.5 rounded-lg glass-panel border border-white/10 text-xs font-mono font-bold text-slate-300 hover:border-cyan-400 transition-all">
+              48H
+            </button>
+            <button data-horizon="72" class="chart-horizon-btn active-tab px-3.5 py-1.5 rounded-lg glass-panel border border-cyan-500/40 text-xs font-mono font-bold text-cyan-300 transition-all">
+              72H
             </button>
           </div>
 
           <!-- Weather Toggle -->
-          <div class="flex items-center gap-3">
+          <div class="flex items-center">
             <label class="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-300">
-              <input type="checkbox" id="chart-toggle-weather" checked class="w-4 h-4 rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-cyan-400">
-              <span>Show Surface Wind Speed Overlay (m/s)</span>
+              <input type="checkbox" checked class="chart-weather-toggle w-4 h-4 rounded border-slate-700 bg-slate-800 text-emerald-500 focus:ring-emerald-400">
+              <span>Surface Wind Speed (m/s)</span>
             </label>
           </div>
         </div>
 
+        <!-- Summary Strip -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4">
+          <div class="glass-panel p-2.5 rounded-xl border border-white/5 bg-slate-950/40">
+            <div class="text-[10px] font-mono text-slate-400">CURRENT T0</div>
+            <div class="chart-current-val text-lg font-mono font-black text-sky-400">288 AQI</div>
+          </div>
+          <div class="glass-panel p-2.5 rounded-xl border border-white/5 bg-slate-950/40">
+            <div class="text-[10px] font-mono text-slate-400">PEAK SPIKE (MAX)</div>
+            <div class="chart-forecast-max text-lg font-mono font-black text-rose-500">432 AQI</div>
+          </div>
+          <div class="glass-panel p-2.5 rounded-xl border border-white/5 bg-slate-950/40">
+            <div class="text-[10px] font-mono text-slate-400">VALLEY (MIN)</div>
+            <div class="chart-forecast-min text-lg font-mono font-black text-emerald-400">290 AQI</div>
+          </div>
+          <div class="glass-panel p-2.5 rounded-xl border border-white/5 bg-slate-950/40">
+            <div class="text-[10px] font-mono text-slate-400">WINDOW MEAN</div>
+            <div class="chart-forecast-avg text-lg font-mono font-black text-amber-400">368.5 AQI</div>
+          </div>
+        </div>
+
         <!-- Chart Container -->
-        <div class="relative w-full h-[400px] mt-6">
+        <div class="relative w-full h-[400px] mt-4">
           <canvas id="forecast-chart-canvas"></canvas>
         </div>
 

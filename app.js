@@ -28,10 +28,23 @@ document.addEventListener("DOMContentLoaded", () => {
     console.warn("IoT canvas init:", e);
   }
 
+  let dashboardForecastChart = null;
+  let studioForecastChart = null;
+
   try {
-    forecastChart = new AirSightForecastChart('forecast-chart-canvas');
+    if (document.getElementById('dashboard-forecast-canvas')) {
+      dashboardForecastChart = new AirSightForecastChart('dashboard-forecast-canvas');
+    }
   } catch (e) {
-    console.warn("Forecast chart init:", e);
+    console.warn("Dashboard forecast chart init:", e);
+  }
+
+  try {
+    if (document.getElementById('forecast-chart-canvas')) {
+      studioForecastChart = new AirSightForecastChart('forecast-chart-canvas');
+    }
+  } catch (e) {
+    console.warn("Studio forecast chart init:", e);
   }
 
   try {
@@ -152,6 +165,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (riskLevel) riskLevel.textContent = station.riskLevel;
     if (locationName) locationName.textContent = station.name;
     if (locationSource) locationSource.textContent = station.dominantSource;
+
+    // Synchronize all active forecast charts with location-specific data
+    if (typeof AirSightForecastChart !== "undefined" && AirSightForecastChart.setAllStations) {
+      AirSightForecastChart.setAllStations(station.id);
+    }
 
     // Pulse animation on dashboard update
     const card = document.getElementById("main-dashboard-card");
